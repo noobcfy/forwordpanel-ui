@@ -1,0 +1,122 @@
+.body_container {
+    /* overflow: hidden; */
+    width: 100%;
+    min-height: 100%;
+    position: absolute;
+    top: 0;
+}
+.m-content {
+    background: #fff;
+    font-family: "PingFang-SC-Regular";
+}
+.m-portlet__head-text {
+    color: #575962;
+    font-weight: 500;
+    font-family: Roboto;
+    margin: 0;
+    padding: 0;
+    font-size: 1.2rem;
+}
+.m-portlet__head {
+    padding: 0 2.2rem;
+    height: 4rem;
+    line-height: 4rem;
+    position: relative;
+    border-bottom: 1px solid #ebedf2;
+}
+.m-portlet__body {
+    padding: 2.2rem 2.2rem;
+}
+.btn-primary {
+    color: #fff;
+    background-color: #5867dd;
+    border-color: #5867dd;
+}
+.modal {
+    background-color: rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    overflow: hidden;
+    outline: 0;
+}
+.modal-content {
+    box-shadow: 0 0 15px 1px rgba(69, 65, 78, 0.2);
+    border-radius: 4px;
+    height: auto;
+    width: 800px;
+    max-height: 600px;
+    overflow: auto;
+    position: absolute;
+    top: calc(50% - 300px);
+    left: calc(50% - 400px);
+    background-color: #fff;
+    box-sizing: border-box;
+}
+.modal-header {
+    display: flex;
+    -webkit-box-align: start;
+    -ms-flex-align: start;
+    align-items: flex-start;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    border-top-left-radius: 0.3rem;
+    border-top-right-radius: 0.3rem;
+}
+.modal-title {
+    font-weight: 400;
+    font-size: 1.2rem;
+    margin-bottom: 0;
+    line-height: 1.5;
+    color: #3f4047;
+}
+.modal-body {
+    padding: 25px;
+    margin: 0 auto;
+    flex: 1 1 auto;
+}
+.modal_form {
+    padding: 25px;
+    margin: 0 auto;
+}
+.block {
+    display: flex;
+    flex-direction: row-reverse;
+    border-top: 1px solid #e9ecef;
+    padding: 20px;
+}
+.searchBody {
+    margin-bottom: 10px;
+}
+.searchBody .el-form-item {
+    margin-bottom: 10px;
+}
+
+/* .searchInput {
+    display: inline-block;
+    margin: 0 20px 10px 0;
+    font-size: 14px;
+    width: 300px;
+}
+.searchInput .el-input {
+    width: 300px;
+} */
+.ql-editor p {
+    color: #575962;
+}
+.ql-editor p strong {
+    color: #000;
+}
+.el-table {
+    width: 99.9% !important;
+}
+.el-input .el-input__inner,
+.el-input input {
+    line-height: 16px;
+}

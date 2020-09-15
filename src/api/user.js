@@ -31,9 +31,81 @@ export function getPage(data) {
   })
 }
 
+export function getUserPortList(data) {
+  return request({
+    url: '/userport/getList',
+    method: 'get',
+    params: data
+  })
+}
+
+export function getFreePortList(data) {
+  return request({
+    url: '/port/getFreePortList',
+    method: 'get',
+    params: data
+  })
+}
+
+export function saveUserPorts(data) {
+  return request({
+    url: '/userport/save',
+    method: 'post',
+    data
+  })
+}
+
 export function deleteData(data) {
   return request({
     url: '/user/delete',
+    method: 'get',
+    params: data
+  })
+}
+
+export function deleteUserPort(data) {
+  return request({
+    url: '/userport/delete',
+    method: 'get',
+    params: data
+  })
+}
+
+export function resetPwd(data) {
+  return request({
+    url: '/user/setPwd',
+    method: 'get',
+    params: data
+  })
+}
+
+export function disableUser(data) {
+  return request({
+    url: '/user/disable',
+    method: 'get',
+    params: data
+  })
+}
+
+export function enableUser(data) {
+  return request({
+    url: '/user/enable',
+    method: 'get',
+    params: data
+  })
+}
+
+export function disableUserPort(data) {
+  return request({
+    url: '/userport/disable',
+    method: 'get',
+    params: data
+  })
+}
+
+export function enableUserPort(data) {
+  return request({
+    url: '/userport/enable',
     method: 'get',
     params: data
   })

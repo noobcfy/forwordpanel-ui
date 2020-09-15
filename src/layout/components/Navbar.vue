@@ -16,12 +16,29 @@
               首页
             </el-dropdown-item>
           </router-link>
+          <el-dropdown-item divided @click.native="showResetPwdDialog">
+            <span style="display:block;">修改密码</span>
+          </el-dropdown-item>
           <el-dropdown-item divided @click.native="logout">
             <span style="display:block;">登出</span>
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </div>
+    <el-dialog title="修改密码" :visible.sync="resetPwdDialog" width="30%">
+      <el-form :model="addForm" :rules="resetPwdFormRules" ref="addForm" label-width="120px" size="small">
+        <el-form-item label="新密码" prop="pwd">
+          <el-input type="password" size="mini"  v-model="addForm.pwd" ></el-input>
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="isPwd">
+          <el-input type="password" size="mini"  v-model="addForm.isPwd" ></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="resetPwdDialog = false">取 消</el-button>
+        <el-button type="primary" @click="confirmReset(row)">确 定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -29,8 +46,29 @@
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
+import { resetPwd } from '@/api/user'
 
 export default {
+  data() {
+    const validateRepeatPassword = (rule, value, callback) => {
+      if (this.addForm.pwd !== this.addForm.isPwd) {
+        callback(new Error('密码不一致'))
+      } else {
+        callback()
+      }
+    }
+    return {
+      resetPwdDialog: false,
+      resetPwdFormRules: {
+        pwd: [{ required: true, min: 4, trigger: 'blur', message: '密码最少4位' }],
+        isPwd: [{ required: true, min: 4, trigger: 'blur',validator: validateRepeatPassword }]
+      },
+      addForm: {
+        pwd: null,
+        isPwd: null
+      }
+    }
+  },
   components: {
     Breadcrumb,
     Hamburger
@@ -48,6 +86,25 @@ export default {
     async logout() {
       await this.$store.dispatch('user/logout')
       this.$router.push(`/login?redirect=${this.$route.fullPath}`)
+    },
+    showResetPwdDialog() {
+      this.resetPwdDialog = true
+    },
+    confirmReset() {
+      this.$refs.addForm.validate(valid => {
+        if (valid) {
+          resetPwd(this.addForm).then(response => {
+            this.$notify({
+              message: '密码修改成功',
+              type: 'success'
+            })
+            this.resetPwdDialog = false
+          })
+        } else {
+          console.log('error submit!!')
+          return false
+        }
+      })
     }
   }
 }

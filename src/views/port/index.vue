@@ -3,7 +3,7 @@
     <div class="searchBody">
       <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
         <el-form-item>
-          <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
+          <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >添加端口</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -14,11 +14,10 @@
       border
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column label="行号" type="index" width="50"></el-table-column>
-      <el-table-column label="服务器名称" prop="serverName" ></el-table-column>
-      <el-table-column label="地址" prop="host" ></el-table-column>
-      <el-table-column label="端口" prop="port" ></el-table-column>
-      <el-table-column label="用户名" prop="username" ></el-table-column>
-      <el-table-column label="密码"   prop="password" ></el-table-column>
+      <el-table-column label="本地端口" prop="localPort" ></el-table-column>
+      <el-table-column label="外网端口" prop="internetPort" ></el-table-column>
+      <el-table-column label="所属服务器" prop="serverName" ></el-table-column>
+      <el-table-column label="服务器IP" prop="serverHost" ></el-table-column>
       <el-table-column label="创建时间" width="160">
         <template slot-scope="scope">
           <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
@@ -48,28 +47,36 @@
         :total="dataTotal">
       </el-pagination>
     </div>
-    <el-dialog title="添加服务器" :visible.sync="addDialog" width="30%">
-      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="80px" size="small">
-        <el-form-item label="名称" prop="serverName">
-          <el-input size="mini"  v-model="addForm.serverName" ></el-input>
-        </el-form-item>
-        <el-form-item label="地址" prop="host">
-          <el-input size="mini"  v-model="addForm.host" ></el-input>
+    <el-dialog title="添加端口" :visible.sync="addDialog" width="30%">
+      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="120px" size="small">
+        <el-form-item   label="所属服务器" prop="serverId">
+          <el-select size="mini" style="width: 100%" clearable  v-model="addForm.serverId"  >
+            <el-option
+              v-for="(item,index) in serverList"
+              :key="item+index"
+              :label="item.serverName"
+              :value="item.id"/>
+          </el-select>
         </el-form-item>
         <el-form-item
-          label="端口"
-          prop="port"
+          label="本地端口"
+          prop="localPort"
           :rules="[
             { required: true, message: '端口不能为空'},
             { type: 'number', message: '端口必须为数字值'}
-          ]">
-          <el-input size="mini"  v-model.number="addForm.port" ></el-input>
+          ]"
+        >
+          <el-input size="mini"  v-model.number="addForm.localPort" ></el-input>
         </el-form-item>
-        <el-form-item label="用户名" prop="username">
-          <el-input size="mini" v-model="addForm.username"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input size="mini" v-model="addForm.password"></el-input>
+        <el-form-item
+          label="外网端口"
+          prop="internetPort"
+          :rules="[
+            { required: true, message: '端口不能为空'},
+            { type: 'number', message: '端口必须为数字值'}
+          ]"
+        >
+          <el-input size="mini"  v-model.number="addForm.internetPort" ></el-input>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -81,31 +88,34 @@
 </template>
 
 <script>
-import { getPage, save, deleteData } from '@/api/server'
+import { getPage, save, deleteData } from '@/api/port'
+import { getList } from '@/api/server'
 export default {
   data() {
     return {
       tableData: [],
       dataTotal: null,
+      serverList: [],
       searchForm: {
         pageSize: 10,
         pageNum: 1
       },
       addForm: {
         id: null,
-        serverName: null,
+        username: null,
         addType: 'add',
         password: null
       },
       addFormRules: {
-        serverName: [{ required: true, trigger: 'blur', message: '必需项' }],
-        host: [{ required: true, trigger: 'blur', message: '必需项' }],
-        username: [{ required: true, trigger: 'blur', message: '必需项' }]
+        serverId: [{ required: true, trigger: 'blur', message: '必需项' }],
+        localPort: [{ required: true, trigger: 'blur', message: '必需项' }],
+        internetPort: [{ required: true, trigger: 'blur', message: '必需项' }]
       },
       addDialog: false
     }
   },
   mounted() {
+    this.initServerList()
     this.getData()
   },
   methods: {
@@ -133,13 +143,6 @@ export default {
     confirmAddForm() {
       this.$refs['addForm'].validate((valid) => {
         if (valid) {
-          if (this.addForm.addType === 'add' && !this.addForm.password){
-            this.$notify({
-              message: '密码不能为空',
-              type: 'warning'
-            })
-            return
-          }
           save(this.addForm).then(response => {
             this.$notify({
               message: '保存成功',
@@ -158,6 +161,11 @@ export default {
     handleCurrentChange(pageNum) {
       this.searchForm.pageNum = pageNum
       this.getData()
+    },
+    initServerList() {
+      getList().then(response => {
+        this.serverList = response.data
+      })
     },
     showAddDialog() {
       this.addDialog = true

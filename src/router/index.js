@@ -67,14 +67,14 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/form',
+    path: '/',
     component: Layout,
     children: [
       {
-        path: 'index',
+        path: 'port',
         name: 'Port',
-        component: () => import('@/views/form/index'),
-        meta: { title: '端口管理', icon: 'form' }
+        component: () => import('@/views/port/index'),
+        meta: { title: '端口管理', icon: 'port' }
       }
     ]
   },
@@ -91,25 +91,25 @@ export const constantRoutes = [
     ]
   },
   {
-    path: '/form',
+    path: '/',
     component: Layout,
     children: [
       {
-        path: 'index',
+        path: 'forward',
         name: 'Forward',
-        component: () => import('@/views/form/index'),
+        component: () => import('@/views/forward/index'),
         meta: { title: '中转管理', icon: 'form' }
       }
     ]
   },
   {
-    path: '/form',
+    path: '/',
     component: Layout,
     children: [
       {
-        path: 'index',
+        path: 'config',
         name: 'Config',
-        component: () => import('@/views/form/index'),
+        component: () => import('@/views/config/index'),
         meta: { title: '配置文件', icon: 'form' }
       }
     ]

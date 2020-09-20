@@ -5,16 +5,24 @@
         <el-form-item>
           <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
             <el-form-item>
-              <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >开通账号</el-button>
+              <el-button type="success"    @click="showAddDialog" >开通账号</el-button>
+              <el-button type="primary"    @click="showAssignDialog()" >端口分配</el-button>
+              <el-button type="primary"    @click="resetFLow()" >重置流量</el-button>
+              <el-button v-if="!selectedRow||selectedRow.disabled" type="success"   @click="handleEnableUser()" title="启用">启用</el-button>
+              <el-button v-if="selectedRow&&!selectedRow.disabled" type="danger"   @click="handleDisableUser()" title="停止">禁用</el-button>
             </el-form-item>
           </el-form>
         </el-form-item>
       </el-form>
+      <span style="font-size: 12px; color: #606266"><i class="el-icon-warning" style="margin-right: 3px"></i>流量统计有延迟, 5分钟统计一次</span>
     </div>
     <el-table
       :data="tableData"
       style="width: 100%; margin-bottom: 20px;"
       row-key="id"
+      ref="singleTable"
+      @current-change="handleSelect"
+      highlight-current-row
       border
       :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
       <el-table-column label="行号" type="index" width="50"></el-table-column>
@@ -30,7 +38,11 @@
         </template>
       </el-table-column>
       <el-table-column label="流量限制(GB)" prop="dataLimit" ></el-table-column>
-      <el-table-column label="已用流量"   prop="dataUsage" ></el-table-column>
+      <el-table-column label="已用流量"   prop="dataUsage" >
+        <template slot-scope="scope">
+          {{getFlow(scope.row.dataUsage)}}
+        </template>
+      </el-table-column>
       <el-table-column label="到期时间" width="160">
         <template slot-scope="scope">
           <span>{{ scope.row.expireTime | parseTime('{y}-{m}-{d}') }}</span>
@@ -41,12 +53,9 @@
           {{ scope.row.disabled===false?'启用':'禁用' }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width='300'>
+      <el-table-column label="操作" fixed="right">
         <template slot-scope="scope">
-          <el-button type="success" size="mini"   @click="showAssignDialog(scope.row)" title="端口管理">端口管理</el-button>
           <el-button type="primary" size="mini" @click="showEditDialog(scope.row)" title="编辑">编辑</el-button>
-          <el-button v-if="scope.row.disabled" type="success" size="mini"  @click="handleEnableUser(scope.row)" title="启用">启用</el-button>
-          <el-button v-if="!scope.row.disabled" type="danger" size="mini"  @click="handleDisableUser(scope.row)" title="停止">禁用</el-button>
           <el-button type="danger" size="mini" @click="deleteData(scope.row)" title="删除">删除</el-button>
         </template>
       </el-table-column>
@@ -64,7 +73,7 @@
       </el-pagination>
     </div>
     <el-dialog title="开通账号" :visible.sync="addDialog" width="30%">
-      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="120px" size="small">
+      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="130px" size="small">
         <el-form-item   label="用户类型" prop="userType">
           <el-select size="mini" style="width: 100%"  v-model="addForm.userType"  >
             <el-option
@@ -97,13 +106,26 @@
           <el-input size="mini"  v-model="addForm.telegram" ></el-input>
         </el-form-item>
         <el-form-item
-          label="流量限制(GB)"
           prop="dataLimit"
           :rules="[
             { required: true, message: '必填项'},
             { type: 'number', message: '必须为数字值'}
           ]"
         >
+          <template slot="label">
+                    <span style="position:relative">
+                        <span>
+                          流量限制(GB)
+                          <el-tooltip class="item" effect="dark" placement="top">
+                          <div slot="content">
+                            <p>设置为0或负数,不限制流量</p>
+                          </div>
+                          <i class="el-icon-question table-msg"/>
+                          </el-tooltip>
+                        </span>
+
+                    </span>
+          </template>
           <el-input size="mini"  v-model.number="addForm.dataLimit" ></el-input>
         </el-form-item>
       </el-form>
@@ -128,7 +150,7 @@
               {{ scope.row.disabled===false?'启用':'禁用' }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" fixed="right" width='180'>
+          <el-table-column label="操作" fixed="right">
             <template slot-scope="scope">
               <el-button type="danger" size="mini" @click="deleteUserPort(scope.row)"  title="删除">删除</el-button>
               <el-button v-if="scope.row.disabled" type="success" size="mini"  @click="enablePort(scope.row)" title="启用中转">启用</el-button>
@@ -163,7 +185,7 @@
 </template>
 
 <script>
-import { getPage, save, deleteData, getUserPortList, getFreePortList, saveUserPorts, deleteUserPort, disableUserPort, enableUserPort,disableUser, enableUser } from '@/api/user'
+import { getPage, save, deleteData, getUserPortList, getFreePortList, saveUserPorts, deleteUserPort, disableUserPort, enableUserPort,disableUser, enableUser, resetFlow } from '@/api/user'
 export default {
   data() {
     return {
@@ -191,7 +213,10 @@ export default {
         username: null,
         addType: 'add',
         password: null,
-        expireTime: null
+        expireTime: null,
+        dataUsage: null,
+        userType: 1,
+        dataLimit:0
       },
       addFormRules: {
         host: [{ required: true, trigger: 'blur', message: '必需项' }],
@@ -199,6 +224,7 @@ export default {
         expireTime: [{ required: true, trigger: 'blur', message: '必需项' }]
       },
       addDialog: false,
+      selectedRow: null,
       assignDialog: false,
       freePortDialog: false,
       multipleSelection: []
@@ -263,8 +289,15 @@ export default {
       this.addForm.addType = 'add'
       this.addForm.id = null
     },
-    showAssignDialog(row) {
-      this.assignUserId = row.id
+    showAssignDialog() {
+      if (!this.selectedRow) {
+        this.$notify({
+          message: '请选择用户',
+          type: 'warning'
+        })
+        return
+      }
+      this.assignUserId = this.selectedRow.id
       getUserPortList({ userId: this.assignUserId }).then(response => {
         this.assignData = response.data
       })
@@ -285,6 +318,9 @@ export default {
     handleSelectionChange(val) {
       console.log(val)
       this.multipleSelection = val
+    },
+    handleSelect(val) {
+      this.selectedRow = val
     },
     selectPorts() {
       console.log('multipleSelection', this.multipleSelection)
@@ -351,8 +387,15 @@ export default {
         })
       })
     },
-    handleDisableUser(row) {
-      disableUser({ id: row.id }).then(response => {
+    handleDisableUser() {
+      if (!this.selectedRow) {
+        this.$notify({
+          message: '请选择用户',
+          type: 'warning'
+        })
+        return
+      }
+      disableUser({ id: this.selectedRow.id }).then(response => {
         this.$notify({
           message: '禁用完成',
           type: 'success'
@@ -360,13 +403,62 @@ export default {
         this.getData()
       })
     },
-    handleEnableUser(row) {
-      enableUser({ id: row.id }).then(response => {
+    handleEnableUser() {
+      if (!this.selectedRow) {
+        this.$notify({
+          message: '请选择用户',
+          type: 'warning'
+        })
+        return
+      }
+      enableUser({ id: this.selectedRow.id }).then(response => {
         this.$notify({
           message: '启用完成',
           type: 'success'
         })
         this.getData()
+      })
+    },
+    getFlow(flowBytes) {
+      let flow = ''
+      // 如果赠送流量小于1MB.则显示为KB
+      if (flowBytes / 1024 < 1024) {
+        flow = (Math.round(flowBytes / 1024) > 0 ? Math.round(flowBytes / 1024) : 0) + 'KB';
+      } else if (flowBytes / 1024 >= 1024 && flowBytes / 1024 / 1024 < 1024) {
+        // 如果赠送流量大于1MB且小于1    GB的则显示为MB
+        flow = (Math.round(flowBytes / 1024 / 1024) > 0 ? Math.round(flowBytes / 1024 / 1024) : 0) + 'MB';
+      } else if (flowBytes / 1024 / 1024 >= 1024) {
+        // 如果流量大于1Gb
+        const gb_Flow = flowBytes / 1024 / 1024 / 1024
+        // toFixed(1);四舍五入保留一位小数
+        flow = gb_Flow.toFixed(3) + 'GB'
+      } else {
+        flow = '0KB'
+      }
+      return flow
+    },
+    resetFLow() {
+      if (!this.selectedRow) {
+        this.$notify({
+          message: '请选择用户',
+          type: 'warning'
+        })
+        return
+      }
+      this.$confirm('确认重置流量?', {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        resetFlow({ id: this.selectedRow.id }).then(response => {
+          this.$notify({
+            message: '重置成功',
+            type: 'success'
+          })
+          getUserPortList({ userId: this.assignUserId }).then(response => {
+            this.assignData = response.data
+          })
+        })
       })
     }
   }

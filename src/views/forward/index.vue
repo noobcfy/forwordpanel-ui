@@ -15,7 +15,7 @@
       <el-table-column label="所属用户" prop="username" ></el-table-column>
       <el-table-column label="已用流量"   prop="dataUsage" >
         <template slot-scope="scope">
-          {{bytesToSize(scope.row.dataUsage)}}
+          {{getFlow(scope.row.dataUsage)}}
         </template>
       </el-table-column>
       <el-table-column  label="是否启动" >
@@ -23,10 +23,10 @@
          {{scope.row.disabled?'已停止':'已启动'}}
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width='120'>
+      <el-table-column label="操作" fixed="right">
         <template slot-scope="scope">
-          <el-button :loading="loading" v-if="scope.row.disabled" type="success" size="mini"  @click="showStartDialog(scope.row)" title="启用中转">启动中转</el-button>
-          <el-button :loading="loading" v-if="!scope.row.disabled" type="danger" size="mini"  @click="stopForward(scope.row)" title="停止中转">停止中转</el-button>
+          <el-button  v-if="scope.row.disabled"  type="success" size="mini"  @click="showStartDialog(scope.row)" title="启用中转">启动中转</el-button>
+          <el-button  v-if="!scope.row.disabled" :loading="!scope.row.btnLoading?false:true" type="danger" size="mini"  @click="stopForward(scope.row)" title="停止中转">停止中转</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -91,7 +91,9 @@ export default {
         id: null,
         username: null,
         addType: 'add',
-        password: null
+        password: null,
+        remotePort: null,
+        remoteHost: null
       },
       addFormRules: {
         remoteHost: [{ required: true, trigger: 'blur', message: '必需项' }]
@@ -137,13 +139,15 @@ export default {
       this.startDialog = true
       this.addForm.serverId = row.serverId
       this.addForm.portId = row.portId
+      this.addForm.remotePort = row.remotePort
+      this.addForm.remoteHost = row.remoteHost
     },
     stopForward(row) {
       this.addForm.serverId = row.serverId
       this.addForm.portId = row.portId
-      this.loading = true
+      this.$set(row, 'btnLoading', true)
       stopForward(this.addForm).then(response => {
-        this.loading = false
+        this.$set(row, 'btnLoading', false)
         this.$notify({
           message: '停止完成',
           type: 'success'
@@ -151,12 +155,23 @@ export default {
         this.getData()
       })
     },
-    bytesToSize(bytes) {
-      if (bytes === 0) return '0 B'
-      const k = 1024
-      const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return (bytes / Math.pow(k, i)).toPrecision(2) + ' ' + sizes[i]
+    getFlow(flowBytes) {
+      let flow = ''
+      // 如果赠送流量小于1MB.则显示为KB
+      if (flowBytes / 1024 < 1024) {
+        flow = (Math.round(flowBytes / 1024) > 0 ? Math.round(flowBytes / 1024) : 0) + 'KB';
+      } else if (flowBytes / 1024 >= 1024 && flowBytes / 1024 / 1024 < 1024) {
+        // 如果赠送流量大于1MB且小于1    GB的则显示为MB
+        flow = (Math.round(flowBytes / 1024 / 1024) > 0 ? Math.round(flowBytes / 1024 / 1024) : 0) + 'MB';
+      } else if (flowBytes / 1024 / 1024 >= 1024) {
+        // 如果流量大于1Gb
+        const gb_Flow = flowBytes / 1024 / 1024 / 1024
+        // toFixed(1);四舍五入保留一位小数
+        flow = gb_Flow.toFixed(3) + 'GB'
+      } else {
+        flow = '0KB'
+      }
+      return flow
     }
   }
 }

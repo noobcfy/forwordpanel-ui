@@ -63,6 +63,14 @@ export function deleteData(data) {
   })
 }
 
+export function resetFlow(data) {
+  return request({
+    url: '/user/resetFlow',
+    method: 'get',
+    params: data
+  })
+}
+
 export function deleteUserPort(data) {
   return request({
     url: '/userport/delete',

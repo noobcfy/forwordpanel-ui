@@ -28,9 +28,10 @@
           <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width='160'>
+      <el-table-column label="操作" fixed="right" width='250'>
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="showEditDialog(scope.row)" title="编辑">编辑</el-button>
+          <el-button type="primary" size="mini" @click="copyRow(scope.row)" title="复制">复制</el-button>
           <el-button type="danger" size="mini" @click="deleteData(scope.row)" title="删除">删除</el-button>
         </template>
       </el-table-column>
@@ -175,8 +176,13 @@ export default {
     showEditDialog(row) {
       this.addDialog = true
       this.addForm = row
-      this.addForm.password = null
       this.addForm.addType = 'edit'
+    },
+    copyRow(row) {
+      this.addDialog = true
+      this.addForm = row
+      this.addForm.id = null
+      this.addForm.addType = 'add'
     }
   }
 }

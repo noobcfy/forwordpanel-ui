@@ -25,9 +25,10 @@
           <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width='250'>
+      <el-table-column label="操作" fixed="right" >
         <template slot-scope="scope">
-          <el-button type="primary" size="mini"  @click="showEditDialog(scope.row)" title="编辑">编辑</el-button>
+          <el-button type="primary" size="mini"  @click="showEditDialog(scope.row)" title="编辑">编辑文本</el-button>
+          <el-button type="primary" size="mini"  @click="showNodeListDialog(scope.row)" title="编辑">节点管理</el-button>
           <el-button type="success" size="mini"  @click='copyLink(scope.row,$event)' title="复制链接">复制链接</el-button>
           <el-button type="danger" size="mini"  @click="deleteData(scope.row)" title="删除">删除</el-button>
         </template>
@@ -59,17 +60,72 @@
         <el-button type="primary" @click="confirmAddForm">确 定</el-button>
       </div>
     </el-dialog>
+    <el-drawer
+      title="节点管理"
+      :with-header="false"
+      :visible.sync="nodeManageDialog"
+      direction="rtl"
+      size="80%">
+      <div class="drawer-body">
+        <el-button size="mini" type="success" icon="el-icon-plus" @click="addNode" >添加节点</el-button>
+        <el-table :data="nodeListData">
+          <el-table-column label="名称" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.name">
+              <span slot="content">{{row.name}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column label="地址" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.server">
+              <span slot="content">{{row.server}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column  label="端口" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.port">
+              <span slot="content">{{row.port}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column  label="类型" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.type">
+              <span slot="content">{{row.type}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column  label="密码" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.password">
+              <span slot="content">{{row.password}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column  label="sni" >
+            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.sni">
+              <span slot="content">{{row.sni}}</span>
+            </editable-cell>
+          </el-table-column>
+          <el-table-column label="操作" fixed="right">
+            <template slot-scope="scope">
+              <el-button type="danger" size="mini" @click="deleteRow(scope.row)"  title="删除">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="demo-drawer__footer">
+          <el-button  type="primary" @click="saveNode" >保存</el-button>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script>
-import { getPage, save, deleteData } from '@/api/config'
+import { getPage, save, deleteData, getNodeList, saveNodeList } from '@/api/config'
 import clip from '@/utils/clipboard'
+import EditableCell from "@/components/EditableCell/index.vue";
 export default {
+  components: {
+    EditableCell
+  },
   data() {
     return {
       tableData: [],
       dataTotal: null,
+      nodeManageDialog: false,
       searchForm: {
         pageSize: 10,
         pageNum: 1
@@ -94,7 +150,9 @@ export default {
         host: [{ required: true, trigger: 'blur', message: '必需项' }],
         username: [{ required: true, trigger: 'blur', message: '必需项' }]
       },
-      addDialog: false
+      addDialog: false,
+      nodeListData: [],
+      editNodeConfigId: null
     }
   },
   mounted() {
@@ -155,6 +213,19 @@ export default {
       this.addForm.password = null
       this.addForm.addType = 'edit'
     },
+    showNodeListDialog(row) {
+      this.editNodeConfigId = row.id
+      getNodeList({ 'id': row.id }).then(response => {
+        const nodeList = response.data.map(row => {
+          return {
+            ...row,
+            editMode: false
+          }
+        })
+        this.nodeListData = nodeList
+      })
+      this.nodeManageDialog = true
+    },
     copyLink(row, event) {
       const curUrl = window.location.href
       let prefix = ''
@@ -165,6 +236,31 @@ export default {
       }
       const link = prefix + window.location.host + '/config/' + row.id
       clip(link, event)
+    },
+    setEditMode(row, index) {
+      row.editMode = true
+    },
+    saveRow(row, index) {
+      row.editMode = false
+    },
+    addNode() {
+      this.nodeListData.push({"name":"节点名称","server":"节点地址","port":443,"type":"trojan","password":"123456","sni":"节点真实地址"})
+    },
+    deleteRow(row) {
+      const index = this.nodeListData.indexOf(row)
+      if (index > -1) {
+        this.nodeListData.splice(index, 1)
+      }
+    },
+    saveNode() {
+      saveNodeList(this.nodeListData, { 'id': this.editNodeConfigId }).then(response => {
+        this.$notify({
+          message: '保存成功',
+          type: 'success'
+        })
+      })
+      this.nodeManageDialog = false
+      this.getData()
     }
   }
 }
@@ -179,5 +275,15 @@ export default {
     font-size: 30px;
     line-height: 46px;
   }
+}
+.drawer-body {
+  padding: 20px;
+}
+.demo-drawer__footer {
+  padding-top: 20px;
+}
+.edit-cell {
+  min-height: 35px;
+  cursor: pointer;
 }
 </style>

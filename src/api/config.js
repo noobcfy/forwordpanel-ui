@@ -23,3 +23,20 @@ export function save(data) {
     data
   })
 }
+
+export function getNodeList(data) {
+  return request({
+    url: '/config/getNodeList',
+    method: 'get',
+    params: data
+  })
+}
+
+export function saveNodeList(data, param) {
+  return request({
+    url: '/config/saveNodeList',
+    method: 'post',
+    params: param,
+    data
+  })
+}

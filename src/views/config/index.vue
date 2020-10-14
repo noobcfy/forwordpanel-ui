@@ -244,7 +244,7 @@ export default {
       row.editMode = false
     },
     addNode() {
-      this.nodeListData.push({"name":"节点名称","server":"节点地址","port":443,"type":"trojan","password":"123456","sni":"节点真实地址"})
+      this.nodeListData.push({"name":"节点名称","server":"节点地址","port":443,"type":"trojan","password":"密码","sni":"节点真实地址"})
     },
     deleteRow(row) {
       const index = this.nodeListData.indexOf(row)
@@ -258,9 +258,9 @@ export default {
           message: '保存成功',
           type: 'success'
         })
+        this.getData()
+        this.nodeManageDialog = false
       })
-      this.nodeManageDialog = false
-      this.getData()
     }
   }
 }

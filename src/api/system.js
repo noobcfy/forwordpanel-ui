@@ -23,3 +23,19 @@ export function importData(fileobj) {
   })
 }
 
+export function saveConfig(data) {
+  return request({
+    url: '/sysConfig/save',
+    method: 'post',
+    data
+  })
+}
+
+export function getConfig(data) {
+  return request({
+    url: '/sysConfig/getSysConfig',
+    method: 'get',
+    params: data
+  })
+}
+

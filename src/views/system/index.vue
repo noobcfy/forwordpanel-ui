@@ -1,10 +1,20 @@
 <template>
   <div class="app-container">
-    <el-form ref="form" :model="addForm" label-width="80px">
+    <el-form ref="form" :model="addForm" style="width: 400px" label-width="80px">
       <el-form-item label="系统升级">
         <el-button @click="exportSystemData" size="mini">导出数据</el-button>
         <el-button type="primary" @click="importSystemData" size="mini">导入数据</el-button>
       </el-form-item>
+      <el-form-item label="TG:" prop="telegram">
+        <el-input size="mini" placeholder="请输入tg链接,租户到期会弹框提示" v-model="addForm.telegram" ></el-input>
+      </el-form-item>
+      <el-form-item label="QQ:" prop="qq">
+        <el-input size="mini" placeholder="请输入qq号,租户到期会弹框提示" v-model="addForm.qq" ></el-input>
+      </el-form-item>
+      <el-form-item label="邮箱:" prop="email">
+        <el-input size="mini" placeholder="请输入邮箱地址,租户到期会弹框提示" v-model="addForm.email" ></el-input>
+      </el-form-item>
+      <el-button size="mini" style="float:right" type="primary" @click="saveSysConfig">保存配置</el-button>
     </el-form>
     <el-dialog title="导入数据" :visible.sync="importDialog" width="30%">
       <el-form :model="addForm"  ref="addForm" label-width="80px" size="small">
@@ -31,7 +41,7 @@
 </template>
 
 <script>
-import { exportData, importData } from '@/api/system'
+import { exportData, importData, saveConfig, getConfig } from '@/api/system'
 export default {
   data() {
     return {
@@ -39,18 +49,31 @@ export default {
       dataTotal: null,
       addForm: {
         id: null,
-        username: null,
-        addType: 'add',
-        password: null,
-        fileList: [],
-        file: null
+        telegram: null,
+        qq: null,
+        email: null
       },
       importDialog: false
     }
   },
   mounted() {
+    this.getSysConfig()
   },
   methods: {
+    saveSysConfig() {
+      saveConfig(this.addForm).then(response => {
+        this.$notify({
+          message: '保存成功',
+          type: 'success'
+        })
+        this.getSysConfig()
+      })
+    },
+    getSysConfig() {
+      getConfig({}).then(response => {
+        this.addForm = response.data
+      })
+    },
     exportSystemData() {
       // 权限管理
       exportData({

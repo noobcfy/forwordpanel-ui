@@ -31,17 +31,25 @@ export function getPage(data) {
   })
 }
 
-export function getUserPortList(data) {
+export function getUserList(data) {
   return request({
-    url: '/userport/getList',
-    method: 'get',
-    params: data
+    url: '/user/getList',
+    method: 'post',
+    data
   })
 }
 
-export function getFreePortList(data) {
+export function getUserPortList(data) {
   return request({
-    url: '/port/getFreePortList',
+    url: '/userport/getList',
+    method: 'post',
+    data
+  })
+}
+
+export function getFreePortPage(data) {
+  return request({
+    url: '/port/getFreePortPage',
     method: 'get',
     params: data
   })
@@ -114,6 +122,34 @@ export function disableUserPort(data) {
 export function enableUserPort(data) {
   return request({
     url: '/userport/enable',
+    method: 'get',
+    params: data
+  })
+}
+
+export function getUserDetail(data) {
+  return request({
+    url: '/user/getUserDetail',
+    method: 'get',
+    params: data
+  })
+}
+
+export function getCurrentUser(data) {
+  return request({
+    url: '/user/getCurrentUser',
+    method: 'get',
+    params: data
+  })
+}
+
+export function getLocalUser() {
+  return JSON.parse(localStorage.getItem('userInfo'))
+}
+
+export function getForwardFlow(data) {
+  return request({
+    url: '/user/getForwardFlow',
     method: 'get',
     params: data
   })

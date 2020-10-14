@@ -7,6 +7,11 @@
         <navbar />
       </div>
       <app-main />
+      <div class="main-footer">
+      <span class="footer-span"><a style="padding: 0 5px 0 0;" target="_blank" href="https://github.com/xiaoli123/forwordpanel/wiki">git地址</a>
+        |
+        <a style="padding: 0 0 0 5px;" target="_blank" href="https://t.me/xiandanzz">tg交流群</a> </span>
+      </div>
     </div>
   </div>
 </template>
@@ -14,7 +19,7 @@
 <script>
 import { Navbar, Sidebar, AppMain } from './components'
 import ResizeMixin from './mixin/ResizeHandler'
-
+import { getCurrentUser } from '@/api/user'
 export default {
   name: 'Layout',
   components: {
@@ -42,9 +47,19 @@ export default {
       }
     }
   },
+  mounted() {
+    this.getUserInfo()
+  },
   methods: {
     handleClickOutside() {
       this.$store.dispatch('app/closeSideBar', { withoutAnimation: false })
+    },
+    getUserInfo() {
+      getCurrentUser({}).then(response => {
+        if (response.data) {
+          localStorage.setItem('userInfo', JSON.stringify(response.data))
+        }
+      })
     }
   }
 }
@@ -89,5 +104,18 @@ export default {
 
   .mobile .fixed-header {
     width: 100%;
+  }
+  .main-footer {
+    display: block;
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 1px 4px rgba(7, 41, 17, 0.31);
+    text-align: center;
+  }
+  .footer-span {
+    font-size: 14px;
+    color: #909399;
   }
 </style>

@@ -158,6 +158,18 @@
             </template>
           </el-table-column>
         </el-table>
+        <div class="block">
+          <el-pagination
+            background
+            @size-change="handleUserPortSizeChange"
+            @current-change="handleUserPortCurrentChange"
+            :page-sizes="[10, 20, 50]"
+            :page-size="userPortSearchForm.pageSize"
+            :current-page="userPortSearchForm.pageNum"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="userPortDataTotal">
+          </el-pagination>
+        </div>
       </div>
     </el-drawer>
     <el-drawer
@@ -166,7 +178,18 @@
       :visible.sync="freePortDialog"
       direction="rtl"
       size="50%">
+
       <div class="drawer-body">
+        <el-form :model="portSelectForm"  >
+        <el-select lable="服务器" style="width: 100%" placeholder="请选择要分配的服务器" @change="handleServerChange"  v-model="portSelectForm.serverId"  >
+          <el-option
+            v-for="(item,index) in serverList"
+            :key="item.id"
+            :value-key="id"
+            :label="item.serverName"
+            :value='item.id'/>
+        </el-select>
+        </el-form>
         <el-table :data="freePortData"  @selection-change="handleSelectionChange">
           <el-table-column
             type="selection"
@@ -175,6 +198,18 @@
           <el-table-column property="serverName" label="服务器" ></el-table-column>
           <el-table-column property="localPort" label="端口" ></el-table-column>
         </el-table>
+        <div class="block">
+          <el-pagination
+            background
+            @size-change="handleFreePortSizeChange"
+            @current-change="handleFreePortCurrentChange"
+            :page-sizes="[10, 20, 50]"
+            :page-size="freePortSearchForm.pageSize"
+            :current-page="freePortSearchForm.pageNum"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="freePortDataTotal">
+          </el-pagination>
+        </div>
         <div class="demo-drawer__footer">
           <el-button size="mini" @click="freePortDialog=false">取 消</el-button>
           <el-button size="mini" type="primary" @click="selectPorts" >确定</el-button>
@@ -185,7 +220,8 @@
 </template>
 
 <script>
-import { getPage, save, deleteData, getUserPortList, getFreePortList, saveUserPorts, deleteUserPort, disableUserPort, enableUserPort,disableUser, enableUser, resetFlow } from '@/api/user'
+import { getPage, save, deleteData, getUserPortList, getFreePortPage, saveUserPorts, deleteUserPort, disableUserPort, enableUserPort, disableUser, enableUser, resetFlow } from '@/api/user'
+import { getList } from '@/api/server'
 export default {
   data() {
     return {
@@ -193,6 +229,8 @@ export default {
       assignData: [],
       freePortData: [],
       dataTotal: null,
+      freePortDataTotal: null,
+      userPortDataTotal: null,
       assignUserId: null,
       searchForm: {
         pageSize: 10,
@@ -216,7 +254,7 @@ export default {
         expireTime: null,
         dataUsage: null,
         userType: 1,
-        dataLimit:0
+        dataLimit: 0
       },
       addFormRules: {
         host: [{ required: true, trigger: 'blur', message: '必需项' }],
@@ -227,7 +265,22 @@ export default {
       selectedRow: null,
       assignDialog: false,
       freePortDialog: false,
-      multipleSelection: []
+      multipleSelection: [],
+      serverId: null,
+      serverList: [],
+      portSelectForm: {
+        serverId: null
+      },
+      freePortSearchForm: {
+        pageSize: 10,
+        pageNum: 1,
+        serverId: null
+      },
+      userPortSearchForm: {
+        pageSize: 10,
+        pageNum: 1,
+        userId: null
+      }
     }
   },
   mounted() {
@@ -280,9 +333,37 @@ export default {
       this.searchForm.pageSize = pageSize
       this.getData()
     },
+    handleUserPortSizeChange(pageSize) {
+      this.userPortSearchForm.pageSize = pageSize
+      getUserPortList(this.userPortSearchForm).then(response => {
+        this.assignData = response.data.list
+        this.userPortDataTotal = response.data.total
+      })
+    },
     handleCurrentChange(pageNum) {
       this.searchForm.pageNum = pageNum
       this.getData()
+    },
+    handleUserPortCurrentChange(pageNum) {
+      this.userPortSearchForm.pageNum = pageNum
+      getUserPortList(this.userPortSearchForm).then(response => {
+        this.assignData = response.data.list
+        this.userPortDataTotal = response.data.total
+      })
+    },
+    handleFreePortSizeChange(pageSize) {
+      this.freePortSearchForm.pageSize = pageSize
+      getFreePortPage(this.freePortSearchForm).then(response => {
+        this.freePortData = response.data.list
+        this.freePortDataTotal = response.data.total
+      })
+    },
+    handleFreePortCurrentChange(pageNum) {
+      this.freePortSearchForm.pageNum = pageNum
+      getFreePortPage(this.freePortSearchForm).then(response => {
+        this.freePortData = response.data.list
+        this.freePortDataTotal = response.data.total
+      })
     },
     showAddDialog() {
       this.addDialog = true
@@ -298,8 +379,10 @@ export default {
         return
       }
       this.assignUserId = this.selectedRow.id
-      getUserPortList({ userId: this.assignUserId }).then(response => {
-        this.assignData = response.data
+      this.userPortSearchForm.userId = this.assignUserId
+      getUserPortList(this.userPortSearchForm).then(response => {
+        this.assignData = response.data.list
+        this.userPortDataTotal = response.data.total
       })
       this.assignDialog = true
     },
@@ -310,9 +393,7 @@ export default {
       this.addForm.addType = 'edit'
     },
     showFreePortDialog() {
-      getFreePortList({ }).then(response => {
-        this.freePortData = response.data
-      })
+      this.getServerList()
       this.freePortDialog = true
     },
     handleSelectionChange(val) {
@@ -343,8 +424,9 @@ export default {
       console.log(selectedUserPortList)
       saveUserPorts(selectedUserPortList).then(response => {
         this.freePortDialog = false
-        getUserPortList({ userId: this.assignUserId }).then(response => {
-          this.assignData = response.data
+        getUserPortList(this.userPortSearchForm).then(response => {
+          this.assignData = response.data.list
+          this.userPortDataTotal = response.data.total
         })
       })
     },
@@ -359,8 +441,9 @@ export default {
             message: '删除成功',
             type: 'success'
           })
-          getUserPortList({ userId: this.assignUserId }).then(response => {
-            this.assignData = response.data
+          getUserPortList(this.userPortSearchForm).then(response => {
+            this.assignData = response.data.list
+            this.userPortDataTotal = response.data.total
           })
         })
       })
@@ -371,8 +454,9 @@ export default {
           message: '禁用完成',
           type: 'success'
         })
-        getUserPortList({ userId: this.assignUserId }).then(response => {
-          this.assignData = response.data
+        getUserPortList(this.userPortSearchForm).then(response => {
+          this.assignData = response.data.list
+          this.userPortDataTotal = response.data.total
         })
       })
     },
@@ -382,8 +466,9 @@ export default {
           message: '启用完成',
           type: 'success'
         })
-        getUserPortList({ userId: this.assignUserId }).then(response => {
-          this.assignData = response.data
+        getUserPortList(this.userPortSearchForm).then(response => {
+          this.assignData = response.data.list
+          this.userPortDataTotal = response.data.total
         })
       })
     },
@@ -455,16 +540,34 @@ export default {
             message: '重置成功',
             type: 'success'
           })
-          getUserPortList({ userId: this.assignUserId }).then(response => {
-            this.assignData = response.data
+          getUserPortList(this.userPortSearchForm).then(response => {
+            this.assignData = response.data.list
+            this.userPortDataTotal = response.data.total
           })
         })
+      })
+    },
+    getServerList() {
+      getList({}).then(response => {
+        this.serverList = response.data
+      })
+    },
+    handleServerChange(serverId) {
+      console.log('>>>>2', serverId)
+      this.freePortSearchForm.serverId = serverId
+      getFreePortPage(this.freePortSearchForm).then(response => {
+        this.freePortData = response.data.list
+        this.freePortDataTotal = response.data.total
       })
     }
   }
 }
 </script>
-
+<style>
+  .el-drawer.rtl{
+    overflow: scroll;
+  }
+</style>
 <style lang="scss" scoped>
 .dashboard {
   &-container {
@@ -480,5 +583,9 @@ export default {
 }
 .demo-drawer__footer {
   padding-top: 20px;
+}
+.el-drawer__body {
+  overflow: auto;
+  /* overflow-x: auto; */
 }
 </style>

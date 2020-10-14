@@ -1,5 +1,23 @@
 <template>
   <div class="app-container">
+    <div class="top-pannel">
+      <span class="top-span"><span>当前账户:</span> <span class="top-text">
+
+          <el-select size="mini" filterable @change="handleSelectUser"  v-model="selectedUser"  >
+            <el-option
+              v-for="(item,index) in userList"
+              :key="item+index"
+              :label="item.username"
+              :value="item.id"/>
+          </el-select>
+
+      </span></span>
+      <span class="top-span"><span>账户到期时间:</span> <span class="top-text">{{userDetail.expireTime | parseTime('{y}-{m}-{d}')}}</span></span>
+      <span class="top-span"><span>账户流量:</span> <span class="top-text">{{getFlow(userDetail.dataUsage)}}/{{userDetail.dataLimit <= 0?'不限制':userDetail.dataLimit+'G'}}</span></span>
+      <el-button  type="text" size="mini"  @click="refreshData()" >刷新</el-button>
+      <el-button  type="text" size="mini"  @click="showDataDetail()" >流量使用详情</el-button>
+      <el-button v-if="checkUserDisabled()" type="text" style="color: red" size="mini"  @click="showContactInfo()" >账号被禁用,点击联系管理员</el-button>
+    </div>
     <el-table
       :data="tableData"
       style="width: 100%; margin-bottom: 20px;"
@@ -13,11 +31,6 @@
       <el-table-column label="被中转地址" prop="remoteHost" ></el-table-column>
       <el-table-column label="被中转端口" prop="remotePort" ></el-table-column>
       <el-table-column label="所属用户" prop="username" ></el-table-column>
-      <el-table-column label="已用流量"   prop="dataUsage" >
-        <template slot-scope="scope">
-          {{getFlow(scope.row.dataUsage)}}
-        </template>
-      </el-table-column>
       <el-table-column  label="是否启动" >
         <template slot-scope="scope">
          {{scope.row.disabled?'已停止':'已启动'}}
@@ -62,11 +75,48 @@
         <el-button :loading="loading" type="primary" @click="confirmStart(row)">确 定</el-button>
       </div>
     </el-dialog>
+    <el-dialog title="联系方式" :visible.sync="contactInfoDialog" width="30%">
+      <el-form  label-width="120px" size="small">
+        <el-form-item label="TG:">
+          <a style="color: dodgerblue" :href="contactInfo.telegram">{{contactInfo.telegram}}</a>
+        </el-form-item>
+        <el-form-item label="QQ:">
+          <span>{{contactInfo.qq}}</span>
+        </el-form-item>
+        <el-form-item label="邮箱:">
+          <span>{{contactInfo.email}}</span>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <el-drawer
+      title="流量使用详情"
+      :with-header="false"
+      :visible.sync="forwardFlowDialog"
+      direction="rtl"
+      size="60%">
+      <div class="drawer-body">
+        <el-table :data="forwardFlowList">
+          <el-table-column property="serverName" label="所属服务" ></el-table-column>
+          <el-table-column property="localPort" label="本地端口" ></el-table-column>
+          <el-table-column property="internetPort" label="外网端口" ></el-table-column>
+          <el-table-column property="remoteHost" label="被转域名" ></el-table-column>
+          <el-table-column property="remotePort" label="被转端口" ></el-table-column>
+          <el-table-column label="已用流量" >
+            <template slot-scope="scope">
+              {{getFlow(scope.row.dataUsage)}}
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script>
 import { getPage, start, stopForward } from '@/api/forward'
+import { getUserList, getUserDetail, getForwardFlow, getLocalUser } from '@/api/user'
+import { getCUID } from '@/utils/auth'
+import { getConfig } from '@/api/system'
 export default {
   data() {
     return {
@@ -74,6 +124,7 @@ export default {
       dataTotal: null,
       loading: false,
       searchForm: {
+        userId: null,
         pageSize: 10,
         pageNum: 1
       },
@@ -98,7 +149,17 @@ export default {
       addFormRules: {
         remoteHost: [{ required: true, trigger: 'blur', message: '必需项' }]
       },
-      startDialog: false
+      startDialog: false,
+      userList: [],
+      selectedUser: null,
+      userDetail: {
+        dataUsage: 0,
+        dataLimit: 0
+      },
+      forwardFlowDialog: false,
+      forwardFlowList: [],
+      contactInfoDialog: false,
+      contactInfo: {}
     }
   },
   mounted() {
@@ -106,10 +167,24 @@ export default {
   },
   methods: {
     getData() {
-      getPage(this.searchForm).then(response => {
-        this.tableData = response.data.list
-        this.dataTotal = response.data.total
+      getUserList({}).then(response => {
+        this.userList = response.data
+        this.selectedUser = Number(getCUID())
+        getUserDetail({}).then(response => {
+          this.userDetail = response.data
+        })
+        getPage(this.searchForm).then(response => {
+          this.tableData = response.data.list
+          this.dataTotal = response.data.total
+        })
       })
+    },
+    checkUserDisabled() {
+      const localUser = getLocalUser();
+      if (localUser && localUser.disabled) {
+        return true
+      }
+      return false
     },
     confirmStart() {
       this.$refs['addForm'].validate((valid) => {
@@ -125,6 +200,35 @@ export default {
             this.getData()
           })
         }
+      })
+    },
+    handleSelectUser(userId) {
+      this.searchForm.userId = userId
+      getPage(this.searchForm).then(response => {
+        this.tableData = response.data.list
+        this.dataTotal = response.data.total
+      })
+      getUserDetail({ 'userId': this.searchForm.userId }).then(response => {
+        this.userDetail = response.data
+      })
+    },
+    refreshData() {
+      getPage(this.searchForm).then(response => {
+        this.tableData = response.data.list
+        this.dataTotal = response.data.total
+      })
+      getUserDetail({ 'userId': this.searchForm.userId }).then(response => {
+        this.userDetail = response.data
+      })
+      this.$notify({
+        message: '刷新完成',
+        type: 'success'
+      })
+    },
+    showDataDetail() {
+      this.forwardFlowDialog = true
+      getForwardFlow({ 'userId': this.searchForm.userId }).then(response => {
+        this.forwardFlowList = response.data
       })
     },
     handleSizeChange(pageSize) {
@@ -155,6 +259,12 @@ export default {
         this.getData()
       })
     },
+    showContactInfo() {
+      this.contactInfoDialog = true
+      getConfig({}).then(response => {
+        this.contactInfo = response.data
+      })
+    },
     getFlow(flowBytes) {
       let flow = ''
       // 如果赠送流量小于1MB.则显示为KB
@@ -176,7 +286,11 @@ export default {
   }
 }
 </script>
-
+<style>
+  .el-drawer.rtl{
+    overflow: scroll;
+  }
+</style>
 <style lang="scss" scoped>
 .dashboard {
   &-container {
@@ -186,5 +300,18 @@ export default {
     font-size: 30px;
     line-height: 46px;
   }
+}
+.top-pannel{
+  margin: 10px 0 10px 0;
+  color: #909399;
+}
+.top-span{
+  margin-right: 20px;
+}
+.top-text{
+  color: #606266;
+}
+.drawer-body {
+  padding: 20px;
 }
 </style>

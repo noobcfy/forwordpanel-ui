@@ -64,3 +64,37 @@ div:focus {
 .app-container {
   padding: 20px;
 }
+
+.el-dialog{
+  min-width: 310px;
+  max-width: 50%;
+  width: auto;
+}
+.el-scrollbar{
+  min-height: 200px;
+  .el-scrollbar__wrap {
+    overflow-y: scroll;
+    height: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 600px) {
+  .el-dialog {
+    max-width: 95%;
+    width: auto!important;
+  }
+}
+.el-dialog{
+  .dialog-line{
+    line-height: 40px;
+  }
+}
+.el-message-box{
+  max-width: 98%;
+}
+
+.el-message{
+  top: 30%!important;
+  max-width: 98%!important;
+}

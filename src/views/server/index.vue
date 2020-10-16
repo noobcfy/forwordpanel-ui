@@ -1,55 +1,33 @@
 <template>
   <div class="app-container">
     <div class="searchBody">
-      <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-        <el-form-item>
-          <el-button type="success"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
-          <el-button type="primary"    @click="showPortListDialog()" >端口管理</el-button>
-        </el-form-item>
-      </el-form>
-      <span style="font-size: 12px; color: #606266"><i class="el-icon-warning" style="margin-right: 3px"></i>添加服务器后, 选中服务器点 端口管理 按钮维护端口</span>
+      <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
     </div>
-    <el-table
-      :data="tableData"
-      style="width: 100%; margin-bottom: 20px;"
-      row-key="id"
-      ref="singleTable"
-      @current-change="handleSelect"
-      highlight-current-row
-      border
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-      <el-table-column label="行号" type="index" width="50"></el-table-column>
-      <el-table-column label="服务器名称" prop="serverName" ></el-table-column>
-      <el-table-column label="地址" prop="host" ></el-table-column>
-      <el-table-column label="端口" prop="port" ></el-table-column>
-      <el-table-column label="用户名" prop="username" ></el-table-column>
-      <el-table-column label="密码"   prop="password" ></el-table-column>
-      <el-table-column label="状态"   prop="state" >
-        <template slot-scope="scope">
-                                <span :class="computeClass(scope.row.state)" v-if="scope.row.state === item.state" v-for="(item,index) in stateList" :key="item+index">
-                                    {{item.stateName}}
-                                </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="创建时间" width="160">
-        <template slot-scope="scope">
-          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="修改时间" width="160">
-        <template slot-scope="scope">
-          <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right" width='160'>
-        <template slot-scope="scope">
-          <el-button type="primary" size="mini" @click="showEditDialog(scope.row)" title="编辑">编辑</el-button>
-          <el-button type="danger" size="mini" @click="deleteData(scope.row)" title="删除">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="item-container" id="itemBox">
+      <div class="item-box" v-for="(item,index) in tableData" :key="index">
+        <div class="server-status">
+          <span :class="computeClass(item.state)" v-if="item.state === status.state" v-for="(status,index) in stateList" :key="item+index">
+              {{status.stateName}}
+          </span>
+        </div>
+        <div class="box-col"><label>服务器名称</label>{{item.serverName}}</div>
+        <div class="box-col"><label>服务器地址</label>{{item.host}}</div>
+        <div class="box-col"><label>SSH端口</label>{{item.port}} <el-button type="success" size="mini" class="port-manage" @click="showPortListDialog(item)">中转端口管理</el-button></div>
+        <div class="box-col"><label>用户名</label>{{item.username}}</div>
+        <div class="box-col"><label>流量倍率</label>{{item.flowRate || 1}}</div>
+        <div class="box-col"><label>峰值速率</label>{{item.bandwidth}}</div>
+        <div class="box-col"><label>更新时间</label>{{item.updateTime || item.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}')}}</div>
+        <div class="box-trl">
+          <el-button type="primary" size="mini" @click="showEditDialog(item)" title="编辑">编辑</el-button>
+          <el-button type="success" size="mini" @click="test(item)" title="test">检测</el-button>
+          <el-button type="success" v-if="item.disabled" size="mini" @click="enable(item)" title="上架">上架</el-button>
+          <el-button type="danger" v-else size="mini" @click="disable(item)" title="下架">下架</el-button>
+          <el-button type="danger" size="mini" @click="deleteData(item)" title="删除">删除</el-button>
+        </div>
+      </div>
+    </div>
     <div class="block">
-      <el-pagination
+      <xd-pager
         background
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -58,38 +36,29 @@
         :current-page="searchForm.pageNum"
         layout="total, sizes, prev, pager, next, jumper"
         :total="dataTotal">
-      </el-pagination>
+      </xd-pager>
     </div>
     <el-drawer
       title="端口管理"
       :with-header="false"
       :visible.sync="portListDialog"
       direction="rtl"
-      size="60%">
-      <div class="drawer-body">
+      :size="drawerPercent">
+      <div id="draw" class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="showAddPortDialog" >添加端口</el-button>
-        <el-table :data="portList">
-          <el-table-column property="localPort" label="本地端口" ></el-table-column>
-          <el-table-column property="internetPort" label="外网端口" ></el-table-column>
-          <el-table-column label="创建时间" width="160">
-            <template slot-scope="scope">
-              <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="修改时间" width="160">
-            <template slot-scope="scope">
-              <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" fixed="right" width='250'>
-            <template slot-scope="scope">
-              <el-button type="primary" size="mini" @click="showEditPortDialog(scope.row)" title="编辑">编辑</el-button>
-              <el-button type="danger" size="mini" @click="deletePort(scope.row)" title="删除">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="item-container">
+          <div class="item-box" v-for="(item,index) in portList" :key="index">
+            <div class="box-col"><label>本地端口</label>{{item.localPort}}</div>
+            <div class="box-col"><label>远程端口</label>{{item.internetPort}}</div>
+            <div class="box-col"><label>更新时间</label>{{item.updateTime || item.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}')}}</div>
+            <div class="box-trl">
+              <el-button type="primary" size="mini" @click="showEditPortDialog(item)" title="编辑">编辑</el-button>
+              <el-button type="danger" size="mini" @click="deletePort(item)" title="删除">删除</el-button>
+            </div>
+          </div>
+        </div>
         <div class="block">
-          <el-pagination
+          <xd-pager
             background
             @size-change="handlePortSizeChange"
             @current-change="handlePortCurrentChange"
@@ -97,8 +66,10 @@
             :page-size="portSearchForm.pageSize"
             :current-page="portSearchForm.pageNum"
             layout="total, sizes, prev, pager, next, jumper"
-            :total="portDataTotal">
-          </el-pagination>
+            :total="portDataTotal"
+            father-id="draw"
+          >
+          </xd-pager>
         </div>
       </div>
     </el-drawer>
@@ -333,27 +304,17 @@ export default {
     },
     showEditDialog(row) {
       this.addDialog = true
-      this.addForm = row
+      this.addForm = Object.assign(row)
       this.addForm.password = null
       this.addForm.addType = 'edit'
     },
-    showPortListDialog() {
-      if (!this.selectedRow) {
-        this.$notify({
-          message: '请选择服务器',
-          type: 'warning'
-        })
-        return
-      }
+    showPortListDialog(item) {
       this.portListDialog = true
-      this.portSearchForm.serverId = this.selectedRow.id
+      this.portSearchForm.serverId = item.id
       getPortList(this.portSearchForm).then(response => {
         this.portList = response.data.list
         this.portDataTotal = response.data.total
       })
-    },
-    handleSelect(val) {
-      this.selectedRow = val
     },
     deletePort(row) {
       this.$confirm('确认删除?', {
@@ -379,7 +340,7 @@ export default {
     confirmAddPort() {
       this.$refs['addPortForm'].validate((valid) => {
         if (valid) {
-          this.addPortForm.serverId = this.selectedRow.id
+          this.addPortForm.serverId = this.portSearchForm.serverId
           batchSavePort(this.addPortForm).then(response => {
             this.$notify({
               message: '保存成功',
@@ -396,7 +357,7 @@ export default {
     },
     showEditPortDialog(row) {
       this.editPortDialog = true
-      this.editPortForm = row
+      this.editPortForm = Object.assign(row)
     },
     confirmEditPort() {
       this.$refs['editPortForm'].validate((valid) => {
@@ -442,5 +403,25 @@ export default {
 }
 .state-online {
   color: #67C23A;
+}
+.item-box {
+  position: relative;
+  .server-status{
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    &.online{
+      color: greenyellow;
+    }
+    &.outline{
+      color: red;
+    }
+  }
+  .port-manage{
+    line-height: 30px;
+    padding: 0 5px;
+    float: right;
+    font-size: 12px;
+  }
 }
 </style>

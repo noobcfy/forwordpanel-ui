@@ -120,3 +120,74 @@
 .el-input input {
     line-height: 16px;
 }
+.drawer-body{
+  height: 100vh;
+  overflow: auto;
+}
+.item-container{
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  .item-box{
+    height: auto;
+    line-height: 30px;
+    box-shadow: 0 0 3px #ccc;
+    border-radius: 10px;
+    text-align: left;
+    padding: 5px 15px;
+    margin-top: 20px;
+    margin-left: 20px;
+    min-width: 280px;
+    position: relative;
+    .checkbox{
+      position: absolute;
+      right: 10px;
+      top: 0;
+    }
+    .box-col{
+      color: #909399;
+      label{
+        min-width: 100px;
+        text-align: justify;
+        display: inline-block;
+        color: #909399;
+      }
+    }
+    .box-trl{
+      display: flex;
+      justify-content: space-around;
+      border-top: 1px dashed #ccc;
+      padding-top: 10px;
+      padding-bottom: 5px;
+      .el-button{
+        padding: 0px 10px;
+        line-height: 30px;
+      }
+    }
+  }
+  @media screen and (max-width: 675px) {
+    .item-box {
+      width: 100%;
+      margin-left: 0;
+    }
+  }
+
+  @media screen and (max-width: 900px) and (min-width: 675px) {
+    .item-box {
+      width: 48%;
+      margin-left: 1%;
+    }
+  }
+
+  @media screen and (max-width: 1200px) and (min-width: 900px) {
+    .item-box { width: 30%; }
+  }
+
+  @media screen and (max-width: 1500px) and (min-width: 1200px) {
+    .item-box { width: 23%;}
+  }
+  @media screen and (min-width: 1500px) {
+    .item-box { width: 18%;}
+  }
+}

@@ -7,6 +7,9 @@ import { getToken } from '@/utils/auth'
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
   // withCredentials: true, // send cookies when cross-domain requests
+  headers: {
+    'Cache-Control': 'no-cache'
+  },
   timeout: 60000 // request timeout
 })
 
@@ -52,7 +55,12 @@ service.interceptors.response.use(
         type: 'error',
         duration: 5 * 1000
       })
-
+      if (res.code === '403' && res.msg.indexOf('超时') > -1) {
+        store.dispatch('user/logout').finally(() => {
+          location.href = '/#/login'
+        })
+        return
+      }
       // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
       if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
         // to re-login

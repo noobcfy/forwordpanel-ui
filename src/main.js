@@ -16,7 +16,7 @@ import router from './router'
 
 import '@/icons' // icon
 import '@/permission' // permission control
-
+import pager from '@/components/modules/pager'
 /**
  * If you don't want to use mock-server
  * you want to use MockJs for mock api
@@ -42,6 +42,21 @@ Vue.config.productionTip = false
 Object.keys(filters).forEach(key => {
   Vue.filter(key, filters[key])
 })
+
+Vue.mixin({
+  data () {
+    return {
+      drawerPercent: '70%'
+    }
+  },
+  mounted () {
+    if (document.body.clientWidth < 600) {
+      this.drawerPercent = '90%'
+    }
+  }
+})
+
+Vue.component('xd-pager', pager)
 
 new Vue({
   el: '#app',

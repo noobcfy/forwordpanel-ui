@@ -20,8 +20,8 @@
         <div class="box-trl">
           <el-button type="primary" size="mini" @click="showEditDialog(item)" title="编辑">编辑</el-button>
           <el-button type="success" size="mini" @click="test(item)" title="test">检测</el-button>
-          <el-button type="success" v-if="item.disabled" size="mini" @click="enable(item)" title="上架">上架</el-button>
-          <el-button type="danger" v-else size="mini" @click="disable(item)" title="下架">下架</el-button>
+          <el-button type="success" v-if="item.disabled" disabled size="mini" @click="enable(item)" title="上架">上架</el-button>
+          <el-button type="danger" v-else size="mini" disabled @click="disable(item)" title="下架">下架</el-button>
           <el-button type="danger" size="mini" @click="deleteData(item)" title="删除">删除</el-button>
         </div>
       </div>

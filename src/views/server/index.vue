@@ -5,6 +5,7 @@
         <el-form-item>
           <el-button type="success"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
           <el-button type="primary"    @click="showPortListDialog()" >端口管理</el-button>
+          <el-button   @click="refreshServerList" >刷新</el-button>
         </el-form-item>
       </el-form>
       <span style="font-size: 12px; color: #606266"><i class="el-icon-warning" style="margin-right: 3px"></i>添加服务器后, 选中服务器点 端口管理 按钮维护端口</span>
@@ -68,6 +69,8 @@
       size="60%">
       <div class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="showAddPortDialog" >添加端口</el-button>
+        <el-button size="mini"   @click="refreshPortList" >刷新</el-button>
+        <div style="font-size: 12px; color: #606266; margin: 10px 0 5px 0"><i class="el-icon-warning" style="margin-right: 3px"></i>端口为异步添加, 请点击刷新查询端口是否添加完成</div>
         <el-table :data="portList">
           <el-table-column property="localPort" label="本地端口" ></el-table-column>
           <el-table-column property="internetPort" label="外网端口" ></el-table-column>
@@ -268,6 +271,16 @@ export default {
         this.dataTotal = response.data.total
       })
     },
+    refreshServerList() {
+      getPage(this.searchForm).then(response => {
+        this.$notify({
+          message: '刷新成功',
+          type: 'success'
+        })
+        this.tableData = response.data.list
+        this.dataTotal = response.data.total
+      })
+    },
     deleteData(row) {
       this.$confirm('确认删除?', {
         confirmButtonText: '确认',
@@ -321,6 +334,12 @@ export default {
     },
     handlePortCurrentChange(pageNum) {
       this.portSearchForm.pageNum = pageNum
+      getPortList(this.portSearchForm).then(response => {
+        this.portList = response.data.list
+        this.portDataTotal = response.data.total
+      })
+    },
+    refreshPortList() {
       getPortList(this.portSearchForm).then(response => {
         this.portList = response.data.list
         this.portDataTotal = response.data.total
@@ -382,7 +401,7 @@ export default {
           this.addPortForm.serverId = this.selectedRow.id
           batchSavePort(this.addPortForm).then(response => {
             this.$notify({
-              message: '保存成功',
+              message: '请求添加成功,请点击刷新按钮查看添加进度',
               type: 'success'
             })
             this.addPortDialog = false

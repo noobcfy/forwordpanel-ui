@@ -551,6 +551,12 @@ export default {
       getList({}).then(response => {
         this.serverList = response.data
       })
+      if (this.freePortSearchForm.serverId) {
+        getFreePortPage(this.freePortSearchForm).then(response => {
+          this.freePortData = response.data.list
+          this.freePortDataTotal = response.data.total
+        })
+      }
     },
     handleServerChange(serverId) {
       console.log('>>>>2', serverId)

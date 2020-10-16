@@ -18,6 +18,7 @@
       <el-button  type="text" size="mini"  @click="showDataDetail()" >流量使用详情</el-button>
       <el-button v-if="checkUserDisabled()" type="text" style="color: red" size="mini"  @click="showContactInfo()" >账号被禁用,点击联系管理员</el-button>
     </div>
+    <div style="font-size: 12px; color: #606266; margin: 5px 0 10px 0"><i class="el-icon-warning" style="margin-right: 3px"></i>转发设置后如果没有生效, 请停用重新启用</div>
     <el-table
       :data="tableData"
       style="width: 100%; margin-bottom: 20px;"
@@ -243,6 +244,7 @@ export default {
       this.startDialog = true
       this.addForm.serverId = row.serverId
       this.addForm.portId = row.portId
+      this.addForm.id = row.id
       this.addForm.remotePort = row.remotePort
       this.addForm.remoteHost = row.remoteHost
     },

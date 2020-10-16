@@ -2,6 +2,7 @@
   <div class="app-container">
     <div class="searchBody">
       <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
+      <el-button   @click="refreshServerList" >刷新</el-button>
     </div>
     <div class="item-container" id="itemBox">
       <div class="item-box" v-for="(item,index) in tableData" :key="index">
@@ -46,6 +47,7 @@
       :size="drawerPercent">
       <div id="draw" class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="showAddPortDialog" >添加端口</el-button>
+        <el-button size="mini" @click="refreshPortList" >刷新</el-button>
         <div class="item-container">
           <div class="item-box" v-for="(item,index) in portList" :key="index">
             <div class="box-col"><label>本地端口</label>{{item.localPort}}</div>
@@ -239,6 +241,16 @@ export default {
         this.dataTotal = response.data.total
       })
     },
+    refreshServerList() {
+      getPage(this.searchForm).then(response => {
+        this.$notify({
+          message: '刷新成功',
+          type: 'success'
+        })
+        this.tableData = response.data.list
+        this.dataTotal = response.data.total
+      })
+    },
     deleteData(row) {
       this.$confirm('确认删除?', {
         confirmButtonText: '确认',
@@ -297,6 +309,12 @@ export default {
         this.portDataTotal = response.data.total
       })
     },
+    refreshPortList() {
+      getPortList(this.portSearchForm).then(response => {
+        this.portList = response.data.list
+        this.portDataTotal = response.data.total
+      })
+    },
     showAddDialog() {
       this.addDialog = true
       this.addForm.addType = 'add'
@@ -343,7 +361,7 @@ export default {
           this.addPortForm.serverId = this.portSearchForm.serverId
           batchSavePort(this.addPortForm).then(response => {
             this.$notify({
-              message: '保存成功',
+              message: '请求添加成功,请点击刷新按钮查看添加进度',
               type: 'success'
             })
             this.addPortDialog = false
@@ -403,25 +421,5 @@ export default {
 }
 .state-online {
   color: #67C23A;
-}
-.item-box {
-  position: relative;
-  .server-status{
-    position: absolute;
-    right: 10px;
-    top: 5px;
-    &.online{
-      color: greenyellow;
-    }
-    &.outline{
-      color: red;
-    }
-  }
-  .port-manage{
-    line-height: 30px;
-    padding: 0 5px;
-    float: right;
-    font-size: 12px;
-  }
 }
 </style>

@@ -7,47 +7,32 @@
         </el-form-item>
       </el-form>
     </div>
-    <el-table
-      :data="tableData"
-      style="width: 100%; margin-bottom: 20px;"
-      row-key="id"
-      border
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-      <el-table-column label="行号" type="index" width="50"></el-table-column>
-      <el-table-column label="配置名称" prop="configName" ></el-table-column>
-      <el-table-column label="创建时间" width="160">
-        <template slot-scope="scope">
-          <span>{{ scope.row.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="修改时间" width="160">
-        <template slot-scope="scope">
-          <span>{{ scope.row.updateTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right" >
-        <template slot-scope="scope">
-          <el-button type="primary" size="mini"  @click="showEditDialog(scope.row)" title="编辑">编辑文本</el-button>
-          <el-button type="primary" size="mini"  @click="showNodeListDialog(scope.row)" title="编辑">节点管理</el-button>
-          <el-button type="success" size="mini"  @click='copyLink(scope.row,$event)' title="复制链接">复制链接</el-button>
-          <el-button type="danger" size="mini"  @click="deleteData(scope.row)" title="删除">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <div class="block">
-      <el-pagination
-        background
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :page-sizes="[10, 20, 50]"
-        :page-size="searchForm.pageSize"
-        :current-page="searchForm.pageNum"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="dataTotal">
-      </el-pagination>
+    <div class="item-container">
+      <div class="item-box" v-for="(item,index) in tableData" :key="index">
+        <div class="box-col"><label>配置名称</label>{{item.configName}}</div>
+        <div class="box-col"><label>更新时间</label>{{item.updateTime || item.createTime | parseTime('{y}-{m}-{d} {h}:{i}:{s}')}}</div>
+        <div class="box-trl">
+          <el-button type="primary" size="mini"  @click="showEditDialog(item)" title="编辑">编辑文本</el-button>
+          <el-button type="primary" size="mini"  @click="showNodeListDialog(item)" title="编辑">节点管理</el-button>
+          <el-button type="success" size="mini"  @click='copyLink(item,$event)' title="复制链接">复制链接</el-button>
+          <el-button type="danger" size="mini"  @click="deleteData(item)" title="删除">删除</el-button>
+        </div>
+      </div>
     </div>
+    <xd-pager
+      background
+      fixed
+      v-if="dataTotal/searchForm.pageSize > 1"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :page-sizes="[10, 20, 50]"
+      :page-size="searchForm.pageSize"
+      :current-page="searchForm.pageNum"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="dataTotal">
+    </xd-pager>
     <el-dialog title="添加配置" :visible.sync="addDialog" width="50%">
-      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="120px" size="small">
+      <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="80px" size="small">
         <el-form-item label="配置名称" prop="configName">
           <el-input size="mini"  v-model="addForm.configName" ></el-input>
         </el-form-item>
@@ -65,48 +50,22 @@
       :with-header="false"
       :visible.sync="nodeManageDialog"
       direction="rtl"
-      size="80%">
+      :size="drawerPercent">
       <div class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="addNode" >添加节点</el-button>
-        <el-table :data="nodeListData">
-          <el-table-column label="名称" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.name">
-              <span slot="content">{{row.name}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column label="地址" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.server">
-              <span slot="content">{{row.server}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column  label="端口" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.port">
-              <span slot="content">{{row.port}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column  label="类型" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.type">
-              <span slot="content">{{row.type}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column  label="密码" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.password">
-              <span slot="content">{{row.password}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column  label="sni" >
-            <editable-cell :show-input="row.editMode" slot-scope="{row}" v-model="row.sni">
-              <span slot="content">{{row.sni}}</span>
-            </editable-cell>
-          </el-table-column>
-          <el-table-column label="操作" fixed="right">
-            <template slot-scope="scope">
-              <el-button type="danger" size="mini" @click="deleteRow(scope.row)"  title="删除">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="demo-drawer__footer">
-          <el-button  type="primary" @click="saveNode" >保存</el-button>
+        <el-button size="mini" type="success" icon="el-icon-save" @click="saveNode" >保存</el-button>
+        <div class="item-container">
+          <div class="item-box" v-for="(item,index) in nodeListData" :key="index">
+            <div class="box-col"><label style="min-width: 50px;">名称</label><input v-model="item.name" class="box-input" type="text"></div>
+            <div class="box-col"><label style="min-width: 50px;">地址</label><input v-model="item.server" class="box-input" type="text"></div>
+            <div class="box-col"><label style="min-width: 50px;">端口</label><input v-model="item.port" class="box-input" type="text"></div>
+            <div class="box-col"><label style="min-width: 50px;">类型</label><input v-model="item.type" class="box-input" type="text"></div>
+            <div class="box-col"><label style="min-width: 50px;">密码</label><input v-model="item.password" class="box-input" type="text"></div>
+            <div class="box-col"><label style="min-width: 50px;">sni</label><input v-model="item.sni" class="box-input" type="text"></div>
+            <div class="box-trl">
+              <el-button type="danger" size="mini"  @click="deleteRow(item)" title="删除">删除</el-button>
+            </div>
+          </div>
         </div>
       </div>
     </el-drawer>

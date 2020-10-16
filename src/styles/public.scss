@@ -139,6 +139,15 @@
     margin-left: 20px;
     min-width: 280px;
     position: relative;
+    .box-input{
+      width: 200px;
+      border: none;
+      outline-color: blue;
+      line-height: 25px;
+      color: #909399;
+      font-size: 14px;
+      padding: 0 5px;
+    }
     .checkbox{
       position: absolute;
       right: 10px;

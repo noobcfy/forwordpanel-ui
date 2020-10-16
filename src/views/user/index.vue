@@ -1,67 +1,30 @@
 <template>
   <div class="app-container">
     <div class="searchBody">
-      <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-        <el-form-item>
-          <el-form :inline="true" :model="searchForm" class="demo-form-inline" @submit.native.prevent>
-            <el-form-item>
-              <el-button type="success"    @click="showAddDialog" >开通账号</el-button>
-              <el-button type="primary"    @click="showAssignDialog()" >端口分配</el-button>
-              <el-button type="primary"    @click="resetFLow()" >重置流量</el-button>
-              <el-button v-if="!selectedRow||selectedRow.disabled" type="success"   @click="handleEnableUser()" title="启用">启用</el-button>
-              <el-button v-if="selectedRow&&!selectedRow.disabled" type="danger"   @click="handleDisableUser()" title="停止">禁用</el-button>
-            </el-form-item>
-          </el-form>
-        </el-form-item>
-      </el-form>
-      <span style="font-size: 12px; color: #606266"><i class="el-icon-warning" style="margin-right: 3px"></i>流量统计有延迟, 5分钟统计一次</span>
+      <el-input type="text" v-model="searchForm.params.query" placeholder="请输入用户名筛选" style="width: 200px;"></el-input>
+      <el-button type="success" style="margin-left:10px;padding: 10px;" @click="showAddDialog" >开通账号</el-button>
+      <div class="tip"><span style="font-size: 12px; color: #606266"><i class="el-icon-warning" style="margin-right: 3px"></i>流量统计有延迟, 5分钟统计一次</span></div>
     </div>
-    <el-table
-      :data="tableData"
-      style="width: 100%; margin-bottom: 20px;"
-      row-key="id"
-      ref="singleTable"
-      @current-change="handleSelect"
-      highlight-current-row
-      border
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-      <el-table-column label="行号" type="index" width="50"></el-table-column>
-      <el-table-column label="用户名" prop="username" ></el-table-column>
-      <el-table-column label="用户类型"  >
-        <template slot-scope="scope">
-          <span
-            v-for="(item,index) in userTypeList"
-            v-if="scope.row.userType === item.value"
-            :key="item+index">
-              {{item.name}}
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column label="流量限制(GB)" prop="dataLimit" ></el-table-column>
-      <el-table-column label="已用流量"   prop="dataUsage" >
-        <template slot-scope="scope">
-          {{getFlow(scope.row.dataUsage)}}
-        </template>
-      </el-table-column>
-      <el-table-column label="到期时间" width="160">
-        <template slot-scope="scope">
-          <span>{{ scope.row.expireTime | parseTime('{y}-{m}-{d}') }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column  label="状态" >
-        <template slot-scope="scope">
-          {{ scope.row.disabled===false?'启用':'禁用' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right">
-        <template slot-scope="scope">
-          <el-button type="primary" size="mini" @click="showEditDialog(scope.row)" title="编辑">编辑</el-button>
-          <el-button type="danger" size="mini" @click="deleteData(scope.row)" title="删除">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="item-container">
+      <div class="item-box" v-for="(item,index) in tableData" :key="index">
+        <div class="box-col"><label>用户名</label>{{item.username}}</div>
+        <div class="box-col"><label>TG</label>{{item.telegram}}</div>
+        <div class="box-col"><label>用户角色</label>{{item.userType | userTypeFilter}}</div>
+        <div class="box-col"><label>流量限制</label>{{item.dataLimit}}(GB)</div>
+        <div class="box-col"><label>已使用流量</label>{{getFlow(item.dataUsage)}} <el-button type="danger" class="reset" @click="resetFLow(item)">重置</el-button></div>
+        <div class="box-col"><label>到期时间</label>{{item.expireTime | parseTime('{y}-{m}-{d}')}}</div>
+        <div class="box-col"><label>当前状态</label>{{item.disabled ? '禁用':'启用'}}</div>
+        <div class="box-trl">
+          <el-button type="primary" size="mini" @click="showEditDialog(item)" title="编辑">编辑</el-button>
+          <el-button type="success" v-if="item.disabled" size="mini" @click="handleEnableUser(item)" title="启用">启用</el-button>
+          <el-button type="danger"  v-else size="mini" @click="handleDisableUser(item)" title="禁用">禁用</el-button>
+          <el-button type="primary" size="mini" @click="showAssignDialog(item)" title="端口分配">端口分配</el-button>
+          <el-button type="danger" size="mini" @click="deleteData(item)" title="删除">删除</el-button>
+        </div>
+      </div>
+    </div>
     <div class="block">
-      <el-pagination
+      <xd-pager
         background
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
@@ -70,7 +33,7 @@
         :current-page="searchForm.pageNum"
         layout="total, sizes, prev, pager, next, jumper"
         :total="dataTotal">
-      </el-pagination>
+      </xd-pager>
     </div>
     <el-dialog title="开通账号" :visible.sync="addDialog" width="30%">
       <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="130px" size="small">
@@ -139,27 +102,31 @@
       :with-header="false"
       :visible.sync="assignDialog"
       direction="rtl"
-      size="60%">
+      :size="drawerPercent">
       <div class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="showFreePortDialog" >分配端口</el-button>
-        <el-table :data="assignData">
-          <el-table-column property="serverName" label="服务器" ></el-table-column>
-          <el-table-column property="localPort" label="端口" ></el-table-column>
-          <el-table-column  label="状态" >
-            <template slot-scope="scope">
-              {{ scope.row.disabled===false?'启用':'禁用' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" fixed="right">
-            <template slot-scope="scope">
-              <el-button type="danger" size="mini" @click="deleteUserPort(scope.row)"  title="删除">删除</el-button>
-              <el-button v-if="scope.row.disabled" type="success" size="mini"  @click="enablePort(scope.row)" title="启用中转">启用</el-button>
-              <el-button v-if="!scope.row.disabled" type="danger" size="mini"  @click="disablePort(scope.row)" title="停止中转">禁用</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <el-button size="mini" type="danger" icon="el-icon-minus" disabled title="未开发" >删除端口</el-button>
+        <!--<el-select v-model="server" @change="serverChange" class="drawer-select" placeholder="按服务器筛选">-->
+          <!--<el-option value="">全部</el-option>-->
+          <!--<el-option v-for="(item,index) in serverList" :key="index" :label="item.serverName" :value="item.id"></el-option>-->
+        <!--</el-select>-->
+        <div class="item-container">
+          <div class="item-box" @click="item.checked = !item.checked;$forceUpdate()" v-for="(item,index) in assignData" :key="index">
+            <div class="box-col"><label>服务器名称</label>{{item.serverName}}</div>
+            <div class="box-col"><label>服务器端口</label>{{item.localPort}}</div>
+            <div class="box-col"><label>状态</label>{{item.disabled===false?'启用':'禁用'}}</div>
+            <div class="checkbox" v-if="item.checked">
+              <i class="el-icon-check"></i>
+            </div>
+            <div class="box-trl">
+              <el-button type="danger" size="mini" @click.stop="deleteUserPort(item)"  title="删除">删除</el-button>
+              <el-button v-if="item.disabled" type="success" size="mini"  @click.stop="enablePort(item)" title="启用中转">启用</el-button>
+              <el-button v-if="!item.disabled" type="danger" size="mini"  @click.stop="disablePort(item)" title="停止中转">禁用</el-button>
+            </div>
+          </div>
+        </div>
         <div class="block">
-          <el-pagination
+          <xd-pager
             background
             @size-change="handleUserPortSizeChange"
             @current-change="handleUserPortCurrentChange"
@@ -168,7 +135,7 @@
             :current-page="userPortSearchForm.pageNum"
             layout="total, sizes, prev, pager, next, jumper"
             :total="userPortDataTotal">
-          </el-pagination>
+          </xd-pager>
         </div>
       </div>
     </el-drawer>
@@ -177,29 +144,24 @@
       :with-header="false"
       :visible.sync="freePortDialog"
       direction="rtl"
-      size="50%">
-
+      :size="drawerPercent">
       <div class="drawer-body">
-        <el-form :model="portSelectForm"  >
-        <el-select lable="服务器" style="width: 100%" placeholder="请选择要分配的服务器" @change="handleServerChange"  v-model="portSelectForm.serverId"  >
-          <el-option
-            v-for="(item,index) in serverList"
-            :key="item.id"
-            :value-key="id"
-            :label="item.serverName"
-            :value='item.id'/>
+        <el-button size="mini" type="success" @click="selectPorts" >确定</el-button>
+        <el-button size="mini" type="success" @click="checkAll" >全选</el-button>
+        <el-button size="mini" type="danger" @click="freePortDialog=false">取 消</el-button>
+        <el-select @change="handleServerChange" v-model="portSelectForm.serverId" class="drawer-select" :class="{ mobile: isMobile }" placeholder="按服务器筛选">
+          <el-option v-for="(item,index) in serverList" :key="index" :label="item.serverName" :value="item.id"></el-option>
         </el-select>
-        </el-form>
-        <el-table :data="freePortData"  @selection-change="handleSelectionChange">
-          <el-table-column
-            type="selection"
-            width="55">
-          </el-table-column>
-          <el-table-column property="serverName" label="服务器" ></el-table-column>
-          <el-table-column property="localPort" label="端口" ></el-table-column>
-        </el-table>
+        <div class="item-container">
+          <div class="item-box" @click="item.checked = !item.checked;$forceUpdate()" v-for="(item,index) in freePortData" :key="index">
+            <div class="box-col"><label>服务器端口</label>{{item.localPort}}</div>
+            <div class="checkbox" v-if="item.checked" style="top: 5px">
+              <i class="el-icon-check"></i>
+            </div>
+          </div>
+        </div>
         <div class="block">
-          <el-pagination
+          <xd-pager
             background
             @size-change="handleFreePortSizeChange"
             @current-change="handleFreePortCurrentChange"
@@ -208,11 +170,7 @@
             :current-page="freePortSearchForm.pageNum"
             layout="total, sizes, prev, pager, next, jumper"
             :total="freePortDataTotal">
-          </el-pagination>
-        </div>
-        <div class="demo-drawer__footer">
-          <el-button size="mini" @click="freePortDialog=false">取 消</el-button>
-          <el-button size="mini" type="primary" @click="selectPorts" >确定</el-button>
+          </xd-pager>
         </div>
       </div>
     </el-drawer>
@@ -234,8 +192,12 @@ export default {
       assignUserId: null,
       searchForm: {
         pageSize: 10,
-        pageNum: 1
+        pageNum: 1,
+        params: {
+          query: ''
+        }
       },
+      checkboxShow: true,
       userTypeList: [
         {
           name: '管理员',
@@ -285,6 +247,12 @@ export default {
   },
   mounted() {
     this.getData()
+  },
+  filters: {
+    userTypeFilter (val) {
+      let userType = { 0: '管理员', 1: '普通用户'}
+      return userType[val] || val
+    }
   },
   methods: {
     getData() {
@@ -370,16 +338,9 @@ export default {
       this.addForm.addType = 'add'
       this.addForm.id = null
     },
-    showAssignDialog() {
-      if (!this.selectedRow) {
-        this.$notify({
-          message: '请选择用户',
-          type: 'warning'
-        })
-        return
-      }
-      this.assignUserId = this.selectedRow.id
-      this.userPortSearchForm.userId = this.assignUserId
+    showAssignDialog(item) {
+      this.assignUserId = item.id
+      this.userPortSearchForm.userId = item.id
       getUserPortList(this.userPortSearchForm).then(response => {
         this.assignData = response.data.list
         this.userPortDataTotal = response.data.total
@@ -404,30 +365,29 @@ export default {
       this.selectedRow = val
     },
     selectPorts() {
-      console.log('multipleSelection', this.multipleSelection)
-      if (this.multipleSelection.length <= 0) {
+      let arr = []
+      for (let i of this.freePortData) {
+        i.checked && arr.push({
+          portId: i.id,
+          userId: this.assignUserId,
+          serverId: i.serverId
+        })
+      }
+      if (arr.length <= 0) {
         this.$notify({
           message: '请选择端口',
           type: 'warning'
         })
         return
       }
-      const selectedUserPortList = []
-      const _this = this
-      this.multipleSelection.forEach(function(item) {
-        selectedUserPortList.push({
-          portId: item.id,
-          userId: _this.assignUserId,
-          serverId: item.serverId
-        })
-      })
-      console.log(selectedUserPortList)
-      saveUserPorts(selectedUserPortList).then(response => {
-        this.freePortDialog = false
+      console.log(arr)
+      saveUserPorts(arr).then(response => {
+        // this.freePortDialog = false
         getUserPortList(this.userPortSearchForm).then(response => {
           this.assignData = response.data.list
           this.userPortDataTotal = response.data.total
         })
+        this.handleServerChange(this.portSelectForm.serverId)
       })
     },
     deleteUserPort(row) {
@@ -472,15 +432,8 @@ export default {
         })
       })
     },
-    handleDisableUser() {
-      if (!this.selectedRow) {
-        this.$notify({
-          message: '请选择用户',
-          type: 'warning'
-        })
-        return
-      }
-      disableUser({ id: this.selectedRow.id }).then(response => {
+    handleDisableUser(item) {
+      disableUser({ id: item.id }).then(response => {
         this.$notify({
           message: '禁用完成',
           type: 'success'
@@ -488,15 +441,8 @@ export default {
         this.getData()
       })
     },
-    handleEnableUser() {
-      if (!this.selectedRow) {
-        this.$notify({
-          message: '请选择用户',
-          type: 'warning'
-        })
-        return
-      }
-      enableUser({ id: this.selectedRow.id }).then(response => {
+    handleEnableUser(item) {
+      enableUser({ id: item.id }).then(response => {
         this.$notify({
           message: '启用完成',
           type: 'success'
@@ -522,20 +468,13 @@ export default {
       }
       return flow
     },
-    resetFLow() {
-      if (!this.selectedRow) {
-        this.$notify({
-          message: '请选择用户',
-          type: 'warning'
-        })
-        return
-      }
+    resetFLow(item) {
       this.$confirm('确认重置流量?', {
         confirmButtonText: '确认',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        resetFlow({ id: this.selectedRow.id }).then(response => {
+        resetFlow({ id: item.id }).then(response => {
           this.$notify({
             message: '重置成功',
             type: 'success'
@@ -550,21 +489,27 @@ export default {
     getServerList() {
       getList({}).then(response => {
         this.serverList = response.data
+        if (this.serverList.length) {
+          this.portSelectForm.serverId = this.serverList[0].id
+          this.handleServerChange(this.portSelectForm.serverId)
+        }
       })
-      if (this.freePortSearchForm.serverId) {
-        getFreePortPage(this.freePortSearchForm).then(response => {
-          this.freePortData = response.data.list
-          this.freePortDataTotal = response.data.total
-        })
-      }
     },
     handleServerChange(serverId) {
-      console.log('>>>>2', serverId)
       this.freePortSearchForm.serverId = serverId
+      this.checkboxShow = false
       getFreePortPage(this.freePortSearchForm).then(response => {
-        this.freePortData = response.data.list
+        this.freePortData = [].concat(response.data.list)
+        this.checkboxShow = true
+        this.$forceUpdate()
         this.freePortDataTotal = response.data.total
       })
+    },
+    checkAll () {
+      for (let i of this.freePortData) {
+        i.checked = true
+      }
+      this.$forceUpdate()
     }
   }
 }
@@ -586,6 +531,15 @@ export default {
 }
 .drawer-body {
   padding: 20px;
+  .drawer-select{
+    margin: auto;
+    margin-left: 20px;
+    &.mobile{
+      width: 98%;
+      margin: 10px auto 0px;
+      display: block;
+    }
+  }
 }
 .demo-drawer__footer {
   padding-top: 20px;
@@ -593,5 +547,11 @@ export default {
 .el-drawer__body {
   overflow: auto;
   /* overflow-x: auto; */
+}
+.reset{
+  line-height: 30px;
+  padding: 0 10px;
+  float: right;
+  font-size: 12px;
 }
 </style>

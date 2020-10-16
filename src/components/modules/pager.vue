@@ -74,6 +74,13 @@ export default {
   mounted () {
     if (document.body.clientWidth < 600) {
       this.isMobile = true
+      this.$forceUpdate()
+    }
+    window.onresize = () => {
+      if (document.body.clientWidth < 600) {
+        this.isMobile = true
+        this.$forceUpdate()
+      }
     }
   }
 }
@@ -89,6 +96,7 @@ export default {
     padding: 5px 5px;
     display: flex;
     justify-content: space-around;
+    z-index: 1;
   }
   .footer-pc-page{
     position: absolute;
@@ -99,5 +107,6 @@ export default {
     background-color: #fff;
     padding: 5px 5px;
     float:  right;
+    z-index: 1;
   }
 </style>

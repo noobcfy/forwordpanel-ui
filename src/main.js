@@ -46,12 +46,14 @@ Object.keys(filters).forEach(key => {
 Vue.mixin({
   data () {
     return {
-      drawerPercent: '72%'
+      drawerPercent: '72%',
+      isMobile: false
     }
   },
   mounted () {
     if (document.body.clientWidth < 600) {
       this.drawerPercent = '90%'
+      this.isMobile = true
     }
   }
 })

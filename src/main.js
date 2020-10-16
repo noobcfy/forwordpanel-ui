@@ -46,7 +46,7 @@ Object.keys(filters).forEach(key => {
 Vue.mixin({
   data () {
     return {
-      drawerPercent: '70%'
+      drawerPercent: '72%'
     }
   },
   mounted () {

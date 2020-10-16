@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="searchBody">
       <el-button type="success" size="mini"  icon="el-icon-plus" @click="showAddDialog" >添加服务器</el-button>
-      <el-button   @click="refreshServerList" >刷新</el-button>
+    <el-button  type="success" size="mini"  icon="el-icon-refresh" @click="refreshServerList" >刷新</el-button>
     </div>
     <div class="item-container" id="itemBox">
       <div class="item-box" v-for="(item,index) in tableData" :key="index">
@@ -47,7 +47,7 @@
       :size="drawerPercent">
       <div id="draw" class="drawer-body">
         <el-button size="mini" type="success" icon="el-icon-plus" @click="showAddPortDialog" >添加端口</el-button>
-        <el-button size="mini" @click="refreshPortList" >刷新</el-button>
+        <el-button size="mini" type="success" icon="el-icon-refresh" @click="refreshPortList" >刷新</el-button>
         <div class="item-container">
           <div class="item-box" v-for="(item,index) in portList" :key="index">
             <div class="box-col"><label>本地端口</label>{{item.localPort}}</div>
@@ -421,5 +421,25 @@ export default {
 }
 .state-online {
   color: #67C23A;
+}
+.item-box {
+  position: relative;
+  .server-status{
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    &.online{
+      color: greenyellow;
+    }
+    &.outline{
+      color: red;
+    }
+  }
+  .port-manage{
+    line-height: 30px;
+    padding: 0 5px;
+    float: right;
+    font-size: 12px;
+  }
 }
 </style>

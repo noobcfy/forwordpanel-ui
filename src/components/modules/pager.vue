@@ -1,6 +1,6 @@
 <template>
   <section>
-    <div v-if="isMobile" class="footer-page">
+    <div v-if="isMobile" class="footer-page" :class="{fixed: fixed}">
       <el-button type="success" :disabled="currentPage <= 1" @click="pre()">上一页</el-button>
       <el-button type="success" @click="backTop()">返回首页</el-button>
       <el-button type="success" :disabled="currentPage >= Math.ceil(total / pageSize)" @click="next()">下一页</el-button>
@@ -41,6 +41,10 @@ export default {
     fatherId: {
       type: String,
       default () { return null }
+    },
+    fixed: {
+      type: Boolean,
+      default () { return false }
     }
   },
   methods: {
@@ -87,6 +91,9 @@ export default {
 </script>
 
 <style scoped lang="scss">
+  .fixed{
+    position: fixed!important;
+  }
   .footer-page{
     position: absolute;
     bottom: 0;

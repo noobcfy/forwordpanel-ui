@@ -23,18 +23,18 @@
         </div>
       </div>
     </div>
-    <div class="block">
-      <xd-pager
-        background
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :page-sizes="[10, 20, 50]"
-        :page-size="searchForm.pageSize"
-        :current-page="searchForm.pageNum"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="dataTotal">
-      </xd-pager>
-    </div>
+    <xd-pager
+      fixed
+      background
+      v-if="dataTotal/searchForm.pageSize > 1"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :page-sizes="[10, 20, 50]"
+      :page-size="searchForm.pageSize"
+      :current-page="searchForm.pageNum"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="dataTotal">
+    </xd-pager>
     <el-dialog title="开通账号" :visible.sync="addDialog" width="30%">
       <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="130px" size="small">
         <el-form-item   label="用户类型" prop="userType">
@@ -128,6 +128,7 @@
         <div class="block">
           <xd-pager
             background
+            v-if="userPortDataTotal/userPortSearchForm.pageSize > 1"
             @size-change="handleUserPortSizeChange"
             @current-change="handleUserPortCurrentChange"
             :page-sizes="[10, 20, 50]"
@@ -162,6 +163,7 @@
         </div>
         <div class="block">
           <xd-pager
+            v-if="freePortDataTotal/freePortSearchForm.pageSize > 1"
             background
             @size-change="handleFreePortSizeChange"
             @current-change="handleFreePortCurrentChange"

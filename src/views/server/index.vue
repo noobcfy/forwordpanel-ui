@@ -27,18 +27,18 @@
         </div>
       </div>
     </div>
-    <div class="block">
-      <xd-pager
-        background
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :page-sizes="[10, 20, 50]"
-        :page-size="searchForm.pageSize"
-        :current-page="searchForm.pageNum"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="dataTotal">
-      </xd-pager>
-    </div>
+    <xd-pager
+      v-if="dataTotal/searchForm.pageSize > 1"
+      fixed
+      background
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :page-sizes="[10, 20, 50]"
+      :page-size="searchForm.pageSize"
+      :current-page="searchForm.pageNum"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="dataTotal">
+    </xd-pager>
     <el-drawer
       title="端口管理"
       :with-header="false"
@@ -62,6 +62,7 @@
         <div class="block">
           <xd-pager
             background
+            v-if="portDataTotal/portSearchForm.pageSize > 1"
             @size-change="handlePortSizeChange"
             @current-change="handlePortCurrentChange"
             :page-sizes="[10, 20, 50]"

@@ -1,8 +1,7 @@
 <template>
   <div class="app-container">
     <div class="top-pannel">
-      <span class="top-span"><span>当前账户:</span> <span class="top-text">
-
+      <span class="top-span" :class="{mobile: isMobile}"><span>当前账户:</span> <span class="top-text">
           <el-select size="mini" filterable @change="handleSelectUser"  v-model="selectedUser"  >
             <el-option
               v-for="(item,index) in userList"
@@ -10,52 +9,41 @@
               :label="item.username"
               :value="item.id"/>
           </el-select>
-
       </span></span>
-      <span class="top-span"><span>账户到期时间:</span> <span class="top-text">{{userDetail.expireTime | parseTime('{y}-{m}-{d}')}}</span></span>
-      <span class="top-span"><span>账户流量:</span> <span class="top-text">{{getFlow(userDetail.dataUsage)}}/{{userDetail.dataLimit <= 0?'不限制':userDetail.dataLimit+'G'}}</span></span>
+      <span class="top-span" :class="{mobile: isMobile}"><span>账户到期时间:</span> <span class="top-text">{{userDetail.expireTime | parseTime('{y}-{m}-{d}')}}</span></span>
+      <span class="top-span" :class="{mobile: isMobile}"><span>账户流量:</span> <span class="top-text">{{getFlow(userDetail.dataUsage)}}/{{userDetail.dataLimit <= 0?'不限制':userDetail.dataLimit+'G'}}</span></span>
       <el-button  type="text" size="mini"  @click="refreshData()" >刷新</el-button>
       <el-button  type="text" size="mini"  @click="showDataDetail()" >流量使用详情</el-button>
       <el-button v-if="checkUserDisabled()" type="text" style="color: red" size="mini"  @click="showContactInfo()" >账号被禁用,点击联系管理员</el-button>
     </div>
     <div style="font-size: 12px; color: #606266; margin: 5px 0 10px 0"><i class="el-icon-warning" style="margin-right: 3px"></i>转发设置后如果没有生效, 请停用重新启用</div>
-    <el-table
-      :data="tableData"
-      style="width: 100%; margin-bottom: 20px;"
-      row-key="id"
-      border
-      :tree-props="{children: 'children', hasChildren: 'hasChildren'}">
-      <el-table-column label="行号" type="index" width="50"></el-table-column>
-      <el-table-column label="中站服务器" prop="serverName" ></el-table-column>
-      <el-table-column label="中转地址" prop="serverHost" ></el-table-column>
-      <el-table-column label="中转端口" prop="internetPort" ></el-table-column>
-      <el-table-column label="被中转地址" prop="remoteHost" ></el-table-column>
-      <el-table-column label="被中转端口" prop="remotePort" ></el-table-column>
-      <el-table-column label="所属用户" prop="username" ></el-table-column>
-      <el-table-column  label="是否启动" >
-        <template slot-scope="scope">
-         {{scope.row.disabled?'已停止':'已启动'}}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right">
-        <template slot-scope="scope">
-          <el-button  v-if="scope.row.disabled"  type="success" size="mini"  @click="showStartDialog(scope.row)" title="启用中转">启动中转</el-button>
-          <el-button  v-if="!scope.row.disabled" :loading="!scope.row.btnLoading?false:true" type="danger" size="mini"  @click="stopForward(scope.row)" title="停止中转">停止中转</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <div class="block">
-      <el-pagination
-        background
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :page-sizes="[10, 20, 50]"
-        :page-size="searchForm.pageSize"
-        :current-page="searchForm.pageNum"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="dataTotal">
-      </el-pagination>
+    <div class="item-container">
+      <div class="item-box" v-for="(item,index) in tableData" :key="index">
+        <div class="box-col"><label>中站服务器</label>{{item.serverName}}</div>
+        <div class="box-col"><label>中转地址</label>{{item.serverHost}}</div>
+        <div class="box-col"><label>中转端口</label>{{item.internetPort}}</div>
+        <div class="box-col"><label>远程地址</label>{{item.remoteHost}}</div>
+        <div class="box-col"><label>远程端口</label>{{item.remotePort}}</div>
+        <div class="box-col"><label>所属用户</label>{{item.username}}</div>
+        <div class="box-col"><label>使用流量</label>{{getFlow(item.dataUsage)}}</div>
+        <div class="box-col"><label>中转状态</label>{{item.disabled ? '已停止':'已启动'}}</div>
+        <div class="box-trl">
+          <el-button  v-if="item.disabled"  type="success" size="mini" @click="showStartDialog(item)" title="启用中转">启动中转</el-button>
+          <el-button  v-if="!item.disabled" :loading="!item.btnLoading?false:true" type="danger" size="mini"  @click="stopForward(item)" title="停止中转">停止中转</el-button>
+        </div>
+      </div>
     </div>
+    <xd-pager
+      background
+      fixed
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+      :page-sizes="[10, 20, 50]"
+      :page-size="searchForm.pageSize"
+      :current-page="searchForm.pageNum"
+      layout="total, sizes, prev, pager, next, jumper"
+      :total="dataTotal">
+    </xd-pager>
     <el-dialog title="启动转发" :visible.sync="startDialog" width="30%">
       <el-form :model="addForm" :rules="addFormRules" ref="addForm" label-width="120px" size="small">
         <el-form-item label="域名(或IP)" prop="remoteHost">
@@ -90,24 +78,24 @@
       </el-form>
     </el-dialog>
     <el-drawer
-      title="流量使用详情"
+      title="查看端口"
       :with-header="false"
       :visible.sync="forwardFlowDialog"
       direction="rtl"
-      size="60%">
+      :size="drawerPercent">
       <div class="drawer-body">
-        <el-table :data="forwardFlowList">
-          <el-table-column property="serverName" label="所属服务" ></el-table-column>
-          <el-table-column property="localPort" label="本地端口" ></el-table-column>
-          <el-table-column property="internetPort" label="外网端口" ></el-table-column>
-          <el-table-column property="remoteHost" label="被转域名" ></el-table-column>
-          <el-table-column property="remotePort" label="被转端口" ></el-table-column>
-          <el-table-column label="已用流量" >
-            <template slot-scope="scope">
-              {{getFlow(scope.row.dataUsage)}}
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="item-container">
+          <div v-if="forwardFlowList.length === 0" class="item-box" style="box-shadow:none;">
+            <div class="box-col">暂无数据</div>
+          </div>
+          <div v-else class="item-box" v-for="(item,index) in forwardFlowList" :key="index">
+            <div class="box-col"><label>服务器名称</label>{{item.serverName}}</div>
+            <div class="box-col"><label>服务器端口</label>{{item.localPort}}</div>
+            <div class="box-col"><label>被中转地址</label>{{item.remoteHost}}</div>
+            <div class="box-col"><label>被中转端口</label>{{item.remotePort}}</div>
+            <div class="box-col"><label>已用流量</label>{{getFlow(item.dataUsage)}}</div>
+          </div>
+        </div>
       </div>
     </el-drawer>
   </div>
@@ -309,6 +297,10 @@ export default {
 }
 .top-span{
   margin-right: 20px;
+  line-height: 30px;
+  &.mobile{
+    display: block;
+  }
 }
 .top-text{
   color: #606266;

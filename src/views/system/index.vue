@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form ref="form" :model="addForm" style="width: 400px" label-width="80px">
+    <el-form ref="form" :model="addForm" style="width: 400px;max-width: 98%" label-width="80px">
       <el-form-item label="系统升级">
         <el-button @click="exportSystemData" size="mini">导出数据</el-button>
         <el-button type="primary" @click="importSystemData" size="mini">导入数据</el-button>
